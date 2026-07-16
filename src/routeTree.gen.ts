@@ -14,6 +14,22 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
+import { Route as AuthenticatedSettingsBankRouteImport } from './routes/_authenticated/settings.bank'
+import { Route as AuthenticatedSettingsAdminRouteImport } from './routes/_authenticated/settings.admin'
+import { Route as AuthenticatedBonusLuckySpinRouteImport } from './routes/_authenticated/bonus.lucky-spin'
+import { Route as AuthenticatedBonusKamisCeriaRouteImport } from './routes/_authenticated/bonus.kamis-ceria'
+import { Route as AuthenticatedBonusGebyarTurnoverRouteImport } from './routes/_authenticated/bonus.gebyar-turnover'
+import { Route as AuthenticatedDepositPulsaXlRouteImport } from './routes/_authenticated/deposit.pulsa.xl'
+import { Route as AuthenticatedDepositPulsaTelkomselRouteImport } from './routes/_authenticated/deposit.pulsa.telkomsel'
+import { Route as AuthenticatedDepositEmoneyOvoRouteImport } from './routes/_authenticated/deposit.emoney.ovo'
+import { Route as AuthenticatedDepositEmoneyLinkajaRouteImport } from './routes/_authenticated/deposit.emoney.linkaja'
+import { Route as AuthenticatedDepositEmoneyGopayRouteImport } from './routes/_authenticated/deposit.emoney.gopay'
+import { Route as AuthenticatedDepositEmoneyDanaRouteImport } from './routes/_authenticated/deposit.emoney.dana'
+import { Route as AuthenticatedDepositBankMandiriRouteImport } from './routes/_authenticated/deposit.bank.mandiri'
+import { Route as AuthenticatedDepositBankBriRouteImport } from './routes/_authenticated/deposit.bank.bri'
+import { Route as AuthenticatedDepositBankBniRouteImport } from './routes/_authenticated/deposit.bank.bni'
+import { Route as AuthenticatedDepositBankBcaRouteImport } from './routes/_authenticated/deposit.bank.bca'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,18 +55,146 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsRolesRoute =
+  AuthenticatedSettingsRolesRouteImport.update({
+    id: '/settings/roles',
+    path: '/settings/roles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsBankRoute =
+  AuthenticatedSettingsBankRouteImport.update({
+    id: '/settings/bank',
+    path: '/settings/bank',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSettingsAdminRoute =
+  AuthenticatedSettingsAdminRouteImport.update({
+    id: '/settings/admin',
+    path: '/settings/admin',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBonusLuckySpinRoute =
+  AuthenticatedBonusLuckySpinRouteImport.update({
+    id: '/bonus/lucky-spin',
+    path: '/bonus/lucky-spin',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBonusKamisCeriaRoute =
+  AuthenticatedBonusKamisCeriaRouteImport.update({
+    id: '/bonus/kamis-ceria',
+    path: '/bonus/kamis-ceria',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBonusGebyarTurnoverRoute =
+  AuthenticatedBonusGebyarTurnoverRouteImport.update({
+    id: '/bonus/gebyar-turnover',
+    path: '/bonus/gebyar-turnover',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositPulsaXlRoute =
+  AuthenticatedDepositPulsaXlRouteImport.update({
+    id: '/deposit/pulsa/xl',
+    path: '/deposit/pulsa/xl',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositPulsaTelkomselRoute =
+  AuthenticatedDepositPulsaTelkomselRouteImport.update({
+    id: '/deposit/pulsa/telkomsel',
+    path: '/deposit/pulsa/telkomsel',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositEmoneyOvoRoute =
+  AuthenticatedDepositEmoneyOvoRouteImport.update({
+    id: '/deposit/emoney/ovo',
+    path: '/deposit/emoney/ovo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositEmoneyLinkajaRoute =
+  AuthenticatedDepositEmoneyLinkajaRouteImport.update({
+    id: '/deposit/emoney/linkaja',
+    path: '/deposit/emoney/linkaja',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositEmoneyGopayRoute =
+  AuthenticatedDepositEmoneyGopayRouteImport.update({
+    id: '/deposit/emoney/gopay',
+    path: '/deposit/emoney/gopay',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositEmoneyDanaRoute =
+  AuthenticatedDepositEmoneyDanaRouteImport.update({
+    id: '/deposit/emoney/dana',
+    path: '/deposit/emoney/dana',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositBankMandiriRoute =
+  AuthenticatedDepositBankMandiriRouteImport.update({
+    id: '/deposit/bank/mandiri',
+    path: '/deposit/bank/mandiri',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositBankBriRoute =
+  AuthenticatedDepositBankBriRouteImport.update({
+    id: '/deposit/bank/bri',
+    path: '/deposit/bank/bri',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositBankBniRoute =
+  AuthenticatedDepositBankBniRouteImport.update({
+    id: '/deposit/bank/bni',
+    path: '/deposit/bank/bni',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedDepositBankBcaRoute =
+  AuthenticatedDepositBankBcaRouteImport.update({
+    id: '/deposit/bank/bca',
+    path: '/deposit/bank/bca',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/bonus/gebyar-turnover': typeof AuthenticatedBonusGebyarTurnoverRoute
+  '/bonus/kamis-ceria': typeof AuthenticatedBonusKamisCeriaRoute
+  '/bonus/lucky-spin': typeof AuthenticatedBonusLuckySpinRoute
+  '/settings/admin': typeof AuthenticatedSettingsAdminRoute
+  '/settings/bank': typeof AuthenticatedSettingsBankRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/deposit/bank/bca': typeof AuthenticatedDepositBankBcaRoute
+  '/deposit/bank/bni': typeof AuthenticatedDepositBankBniRoute
+  '/deposit/bank/bri': typeof AuthenticatedDepositBankBriRoute
+  '/deposit/bank/mandiri': typeof AuthenticatedDepositBankMandiriRoute
+  '/deposit/emoney/dana': typeof AuthenticatedDepositEmoneyDanaRoute
+  '/deposit/emoney/gopay': typeof AuthenticatedDepositEmoneyGopayRoute
+  '/deposit/emoney/linkaja': typeof AuthenticatedDepositEmoneyLinkajaRoute
+  '/deposit/emoney/ovo': typeof AuthenticatedDepositEmoneyOvoRoute
+  '/deposit/pulsa/telkomsel': typeof AuthenticatedDepositPulsaTelkomselRoute
+  '/deposit/pulsa/xl': typeof AuthenticatedDepositPulsaXlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/profile': typeof AuthenticatedProfileRoute
+  '/bonus/gebyar-turnover': typeof AuthenticatedBonusGebyarTurnoverRoute
+  '/bonus/kamis-ceria': typeof AuthenticatedBonusKamisCeriaRoute
+  '/bonus/lucky-spin': typeof AuthenticatedBonusLuckySpinRoute
+  '/settings/admin': typeof AuthenticatedSettingsAdminRoute
+  '/settings/bank': typeof AuthenticatedSettingsBankRoute
+  '/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/deposit/bank/bca': typeof AuthenticatedDepositBankBcaRoute
+  '/deposit/bank/bni': typeof AuthenticatedDepositBankBniRoute
+  '/deposit/bank/bri': typeof AuthenticatedDepositBankBriRoute
+  '/deposit/bank/mandiri': typeof AuthenticatedDepositBankMandiriRoute
+  '/deposit/emoney/dana': typeof AuthenticatedDepositEmoneyDanaRoute
+  '/deposit/emoney/gopay': typeof AuthenticatedDepositEmoneyGopayRoute
+  '/deposit/emoney/linkaja': typeof AuthenticatedDepositEmoneyLinkajaRoute
+  '/deposit/emoney/ovo': typeof AuthenticatedDepositEmoneyOvoRoute
+  '/deposit/pulsa/telkomsel': typeof AuthenticatedDepositPulsaTelkomselRoute
+  '/deposit/pulsa/xl': typeof AuthenticatedDepositPulsaXlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +203,68 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
+  '/_authenticated/bonus/gebyar-turnover': typeof AuthenticatedBonusGebyarTurnoverRoute
+  '/_authenticated/bonus/kamis-ceria': typeof AuthenticatedBonusKamisCeriaRoute
+  '/_authenticated/bonus/lucky-spin': typeof AuthenticatedBonusLuckySpinRoute
+  '/_authenticated/settings/admin': typeof AuthenticatedSettingsAdminRoute
+  '/_authenticated/settings/bank': typeof AuthenticatedSettingsBankRoute
+  '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRoute
+  '/_authenticated/deposit/bank/bca': typeof AuthenticatedDepositBankBcaRoute
+  '/_authenticated/deposit/bank/bni': typeof AuthenticatedDepositBankBniRoute
+  '/_authenticated/deposit/bank/bri': typeof AuthenticatedDepositBankBriRoute
+  '/_authenticated/deposit/bank/mandiri': typeof AuthenticatedDepositBankMandiriRoute
+  '/_authenticated/deposit/emoney/dana': typeof AuthenticatedDepositEmoneyDanaRoute
+  '/_authenticated/deposit/emoney/gopay': typeof AuthenticatedDepositEmoneyGopayRoute
+  '/_authenticated/deposit/emoney/linkaja': typeof AuthenticatedDepositEmoneyLinkajaRoute
+  '/_authenticated/deposit/emoney/ovo': typeof AuthenticatedDepositEmoneyOvoRoute
+  '/_authenticated/deposit/pulsa/telkomsel': typeof AuthenticatedDepositPulsaTelkomselRoute
+  '/_authenticated/deposit/pulsa/xl': typeof AuthenticatedDepositPulsaXlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/profile'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/profile'
+    | '/bonus/gebyar-turnover'
+    | '/bonus/kamis-ceria'
+    | '/bonus/lucky-spin'
+    | '/settings/admin'
+    | '/settings/bank'
+    | '/settings/roles'
+    | '/deposit/bank/bca'
+    | '/deposit/bank/bni'
+    | '/deposit/bank/bri'
+    | '/deposit/bank/mandiri'
+    | '/deposit/emoney/dana'
+    | '/deposit/emoney/gopay'
+    | '/deposit/emoney/linkaja'
+    | '/deposit/emoney/ovo'
+    | '/deposit/pulsa/telkomsel'
+    | '/deposit/pulsa/xl'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/profile'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/profile'
+    | '/bonus/gebyar-turnover'
+    | '/bonus/kamis-ceria'
+    | '/bonus/lucky-spin'
+    | '/settings/admin'
+    | '/settings/bank'
+    | '/settings/roles'
+    | '/deposit/bank/bca'
+    | '/deposit/bank/bni'
+    | '/deposit/bank/bri'
+    | '/deposit/bank/mandiri'
+    | '/deposit/emoney/dana'
+    | '/deposit/emoney/gopay'
+    | '/deposit/emoney/linkaja'
+    | '/deposit/emoney/ovo'
+    | '/deposit/pulsa/telkomsel'
+    | '/deposit/pulsa/xl'
   id:
     | '__root__'
     | '/'
@@ -72,6 +272,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/dashboard'
     | '/_authenticated/profile'
+    | '/_authenticated/bonus/gebyar-turnover'
+    | '/_authenticated/bonus/kamis-ceria'
+    | '/_authenticated/bonus/lucky-spin'
+    | '/_authenticated/settings/admin'
+    | '/_authenticated/settings/bank'
+    | '/_authenticated/settings/roles'
+    | '/_authenticated/deposit/bank/bca'
+    | '/_authenticated/deposit/bank/bni'
+    | '/_authenticated/deposit/bank/bri'
+    | '/_authenticated/deposit/bank/mandiri'
+    | '/_authenticated/deposit/emoney/dana'
+    | '/_authenticated/deposit/emoney/gopay'
+    | '/_authenticated/deposit/emoney/linkaja'
+    | '/_authenticated/deposit/emoney/ovo'
+    | '/_authenticated/deposit/pulsa/telkomsel'
+    | '/_authenticated/deposit/pulsa/xl'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +333,163 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/settings/roles': {
+      id: '/_authenticated/settings/roles'
+      path: '/settings/roles'
+      fullPath: '/settings/roles'
+      preLoaderRoute: typeof AuthenticatedSettingsRolesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/bank': {
+      id: '/_authenticated/settings/bank'
+      path: '/settings/bank'
+      fullPath: '/settings/bank'
+      preLoaderRoute: typeof AuthenticatedSettingsBankRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/admin': {
+      id: '/_authenticated/settings/admin'
+      path: '/settings/admin'
+      fullPath: '/settings/admin'
+      preLoaderRoute: typeof AuthenticatedSettingsAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bonus/lucky-spin': {
+      id: '/_authenticated/bonus/lucky-spin'
+      path: '/bonus/lucky-spin'
+      fullPath: '/bonus/lucky-spin'
+      preLoaderRoute: typeof AuthenticatedBonusLuckySpinRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bonus/kamis-ceria': {
+      id: '/_authenticated/bonus/kamis-ceria'
+      path: '/bonus/kamis-ceria'
+      fullPath: '/bonus/kamis-ceria'
+      preLoaderRoute: typeof AuthenticatedBonusKamisCeriaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/bonus/gebyar-turnover': {
+      id: '/_authenticated/bonus/gebyar-turnover'
+      path: '/bonus/gebyar-turnover'
+      fullPath: '/bonus/gebyar-turnover'
+      preLoaderRoute: typeof AuthenticatedBonusGebyarTurnoverRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/pulsa/xl': {
+      id: '/_authenticated/deposit/pulsa/xl'
+      path: '/deposit/pulsa/xl'
+      fullPath: '/deposit/pulsa/xl'
+      preLoaderRoute: typeof AuthenticatedDepositPulsaXlRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/pulsa/telkomsel': {
+      id: '/_authenticated/deposit/pulsa/telkomsel'
+      path: '/deposit/pulsa/telkomsel'
+      fullPath: '/deposit/pulsa/telkomsel'
+      preLoaderRoute: typeof AuthenticatedDepositPulsaTelkomselRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/emoney/ovo': {
+      id: '/_authenticated/deposit/emoney/ovo'
+      path: '/deposit/emoney/ovo'
+      fullPath: '/deposit/emoney/ovo'
+      preLoaderRoute: typeof AuthenticatedDepositEmoneyOvoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/emoney/linkaja': {
+      id: '/_authenticated/deposit/emoney/linkaja'
+      path: '/deposit/emoney/linkaja'
+      fullPath: '/deposit/emoney/linkaja'
+      preLoaderRoute: typeof AuthenticatedDepositEmoneyLinkajaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/emoney/gopay': {
+      id: '/_authenticated/deposit/emoney/gopay'
+      path: '/deposit/emoney/gopay'
+      fullPath: '/deposit/emoney/gopay'
+      preLoaderRoute: typeof AuthenticatedDepositEmoneyGopayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/emoney/dana': {
+      id: '/_authenticated/deposit/emoney/dana'
+      path: '/deposit/emoney/dana'
+      fullPath: '/deposit/emoney/dana'
+      preLoaderRoute: typeof AuthenticatedDepositEmoneyDanaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/bank/mandiri': {
+      id: '/_authenticated/deposit/bank/mandiri'
+      path: '/deposit/bank/mandiri'
+      fullPath: '/deposit/bank/mandiri'
+      preLoaderRoute: typeof AuthenticatedDepositBankMandiriRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/bank/bri': {
+      id: '/_authenticated/deposit/bank/bri'
+      path: '/deposit/bank/bri'
+      fullPath: '/deposit/bank/bri'
+      preLoaderRoute: typeof AuthenticatedDepositBankBriRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/bank/bni': {
+      id: '/_authenticated/deposit/bank/bni'
+      path: '/deposit/bank/bni'
+      fullPath: '/deposit/bank/bni'
+      preLoaderRoute: typeof AuthenticatedDepositBankBniRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/deposit/bank/bca': {
+      id: '/_authenticated/deposit/bank/bca'
+      path: '/deposit/bank/bca'
+      fullPath: '/deposit/bank/bca'
+      preLoaderRoute: typeof AuthenticatedDepositBankBcaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
+  AuthenticatedBonusGebyarTurnoverRoute: typeof AuthenticatedBonusGebyarTurnoverRoute
+  AuthenticatedBonusKamisCeriaRoute: typeof AuthenticatedBonusKamisCeriaRoute
+  AuthenticatedBonusLuckySpinRoute: typeof AuthenticatedBonusLuckySpinRoute
+  AuthenticatedSettingsAdminRoute: typeof AuthenticatedSettingsAdminRoute
+  AuthenticatedSettingsBankRoute: typeof AuthenticatedSettingsBankRoute
+  AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRoute
+  AuthenticatedDepositBankBcaRoute: typeof AuthenticatedDepositBankBcaRoute
+  AuthenticatedDepositBankBniRoute: typeof AuthenticatedDepositBankBniRoute
+  AuthenticatedDepositBankBriRoute: typeof AuthenticatedDepositBankBriRoute
+  AuthenticatedDepositBankMandiriRoute: typeof AuthenticatedDepositBankMandiriRoute
+  AuthenticatedDepositEmoneyDanaRoute: typeof AuthenticatedDepositEmoneyDanaRoute
+  AuthenticatedDepositEmoneyGopayRoute: typeof AuthenticatedDepositEmoneyGopayRoute
+  AuthenticatedDepositEmoneyLinkajaRoute: typeof AuthenticatedDepositEmoneyLinkajaRoute
+  AuthenticatedDepositEmoneyOvoRoute: typeof AuthenticatedDepositEmoneyOvoRoute
+  AuthenticatedDepositPulsaTelkomselRoute: typeof AuthenticatedDepositPulsaTelkomselRoute
+  AuthenticatedDepositPulsaXlRoute: typeof AuthenticatedDepositPulsaXlRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
+  AuthenticatedBonusGebyarTurnoverRoute: AuthenticatedBonusGebyarTurnoverRoute,
+  AuthenticatedBonusKamisCeriaRoute: AuthenticatedBonusKamisCeriaRoute,
+  AuthenticatedBonusLuckySpinRoute: AuthenticatedBonusLuckySpinRoute,
+  AuthenticatedSettingsAdminRoute: AuthenticatedSettingsAdminRoute,
+  AuthenticatedSettingsBankRoute: AuthenticatedSettingsBankRoute,
+  AuthenticatedSettingsRolesRoute: AuthenticatedSettingsRolesRoute,
+  AuthenticatedDepositBankBcaRoute: AuthenticatedDepositBankBcaRoute,
+  AuthenticatedDepositBankBniRoute: AuthenticatedDepositBankBniRoute,
+  AuthenticatedDepositBankBriRoute: AuthenticatedDepositBankBriRoute,
+  AuthenticatedDepositBankMandiriRoute: AuthenticatedDepositBankMandiriRoute,
+  AuthenticatedDepositEmoneyDanaRoute: AuthenticatedDepositEmoneyDanaRoute,
+  AuthenticatedDepositEmoneyGopayRoute: AuthenticatedDepositEmoneyGopayRoute,
+  AuthenticatedDepositEmoneyLinkajaRoute:
+    AuthenticatedDepositEmoneyLinkajaRoute,
+  AuthenticatedDepositEmoneyOvoRoute: AuthenticatedDepositEmoneyOvoRoute,
+  AuthenticatedDepositPulsaTelkomselRoute:
+    AuthenticatedDepositPulsaTelkomselRoute,
+  AuthenticatedDepositPulsaXlRoute: AuthenticatedDepositPulsaXlRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
