@@ -545,6 +545,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.ticket}</td>
                   <td className="px-4 py-3 font-semibold text-primary">{r.username}</td>
                   <td className="px-4 py-3">{r.fullName}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.senderName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.senderAccount}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.group}</td>
                   <td className="px-4 py-3 font-semibold">{rp(r.amount)}</td>
                   <td className="px-4 py-3">
