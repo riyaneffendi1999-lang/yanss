@@ -510,6 +510,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                 <th className="px-4 py-3 text-left font-medium">Tiket</th>
                 <th className="px-4 py-3 text-left font-medium">Username</th>
                 <th className="px-4 py-3 text-left font-medium">Nama Lengkap</th>
+                <th className="px-4 py-3 text-left font-medium">Pengirim</th>
+                <th className="px-4 py-3 text-left font-medium">No. Rek Pengirim</th>
                 <th className="px-4 py-3 text-left font-medium">Group</th>
                 <th className="px-4 py-3 text-left font-medium">Jumlah Deposit</th>
                 <th className="px-4 py-3 text-left font-medium">Status</th>
