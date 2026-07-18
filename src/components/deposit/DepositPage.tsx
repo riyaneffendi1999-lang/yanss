@@ -52,10 +52,13 @@ export interface DepositPageConfig {
 interface DepositRow {
   id: string;
   date: string; // dd/M/yyyy
+  iso: string; // yyyy-mm-dd for range filtering
   time: string; // HH:mm:ss
   ticket: string;
   username: string;
   fullName: string;
+  senderName: string;
+  senderAccount: string;
   group: "Low" | "Mid" | "High" | "VIP";
   amount: number;
   status: "Approved" | "Pending" | "Rejected";
@@ -81,6 +84,8 @@ const NAMES = [
 const AMOUNTS = [10000, 20000, 25000, 30000, 50000, 75000, 100000, 150000];
 const ADMINS = ["madan", "riyan", "arya", "linda"];
 
+const SENDER_BANKS = ["BCA", "BRI", "BNI", "MANDIRI", "CIMB", "PERMATA"];
+
 function seedRows(channel: string, count = 24): DepositRow[] {
   // simple deterministic hash from channel
   let s = 0;
@@ -92,6 +97,8 @@ function seedRows(channel: string, count = 24): DepositRow[] {
   const rows: DepositRow[] = [];
   let baseTicket = 6570000 + Math.floor(rand() * 999);
   let mins = 20 * 60 + 3; // start at ~20:03
+  // spread rows across last 14 days ending 17/7/2026
+  const end = new Date(Date.UTC(2026, 6, 17));
   for (let i = 0; i < count; i++) {
     const [uname, fname] = NAMES[Math.floor(rand() * NAMES.length)];
     const amount = AMOUNTS[Math.floor(rand() * AMOUNTS.length)];
@@ -100,16 +107,32 @@ function seedRows(channel: string, count = 24): DepositRow[] {
     const status: DepositRow["status"] =
       statusR > 0.94 ? "Rejected" : statusR > 0.88 ? "Pending" : "Approved";
     mins -= Math.floor(rand() * 12) + 2;
+    if (mins < 0) mins = 20 * 60 + Math.floor(rand() * 60);
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     const sec = Math.floor(rand() * 60);
+    const dayOffset = Math.floor(rand() * 14);
+    const d = new Date(end);
+    d.setUTCDate(d.getUTCDate() - dayOffset);
+    const iso = d.toISOString().slice(0, 10);
+    const dateStr = `${d.getUTCDate()}/${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`;
+    // sender: use another random name + generated bank account number
+    const [, senderFull] = NAMES[Math.floor(rand() * NAMES.length)];
+    const bank = SENDER_BANKS[Math.floor(rand() * SENDER_BANKS.length)];
+    const acctNum =
+      String(1000 + Math.floor(rand() * 8999)) +
+      String(1000 + Math.floor(rand() * 8999)) +
+      String(10 + Math.floor(rand() * 89));
     rows.push({
       id: `${channel}-${i}`,
-      date: "17/7/2026",
+      date: dateStr,
+      iso,
       time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`,
       ticket: "D" + baseTicket--,
       username: uname,
       fullName: fname,
+      senderName: `${senderFull} (${bank})`,
+      senderAccount: acctNum,
       group: (["Low", "Low", "Low", "Mid", "High", "VIP"] as const)[
         Math.floor(rand() * 6)
       ],
@@ -185,29 +208,64 @@ function StatusPill({ status }: { status: DepositRow["status"] }) {
 
 export function DepositPage({ config }: { config: DepositPageConfig }) {
   const [accountId, setAccountId] = useState(config.accounts[0]?.id ?? "");
-  const [dateFilter, setDateFilter] = useState("today");
+  const [datePreset, setDatePreset] = useState<"today" | "yesterday" | "7d" | "30d" | "custom">("30d");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | DepositRow["status"]>("all");
   const [search, setSearch] = useState("");
+  const [accountSearch, setAccountSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
   const [rows, setRows] = useState<DepositRow[]>(() => seedRows(config.channel));
 
   const account = config.accounts.find((a) => a.id === accountId) ?? config.accounts[0];
 
+  // Compute effective from/to based on preset (unless custom)
+  const { effFrom, effTo } = useMemo(() => {
+    if (datePreset === "custom") return { effFrom: dateFrom, effTo: dateTo };
+    const today = new Date("2026-07-17T00:00:00Z");
+    const toIso = today.toISOString().slice(0, 10);
+    const shift = (days: number) => {
+      const d = new Date(today);
+      d.setUTCDate(d.getUTCDate() - days);
+      return d.toISOString().slice(0, 10);
+    };
+    if (datePreset === "today") return { effFrom: toIso, effTo: toIso };
+    if (datePreset === "yesterday") return { effFrom: shift(1), effTo: shift(1) };
+    if (datePreset === "7d") return { effFrom: shift(6), effTo: toIso };
+    return { effFrom: shift(29), effTo: toIso };
+  }, [datePreset, dateFrom, dateTo]);
+
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const qa = accountSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (effFrom && r.iso < effFrom) return false;
+      if (effTo && r.iso > effTo) return false;
       if (
-        search &&
+        q &&
         !(
-          r.username.toLowerCase().includes(search.toLowerCase()) ||
-          r.fullName.toLowerCase().includes(search.toLowerCase()) ||
-          r.ticket.toLowerCase().includes(search.toLowerCase())
+          r.username.toLowerCase().includes(q) ||
+          r.fullName.toLowerCase().includes(q) ||
+          r.senderName.toLowerCase().includes(q) ||
+          r.ticket.toLowerCase().includes(q)
         )
       )
         return false;
+      if (qa && !r.senderAccount.toLowerCase().includes(qa)) return false;
       return true;
     });
-  }, [rows, statusFilter, search]);
+  }, [rows, statusFilter, search, accountSearch, effFrom, effTo]);
+
+  const resetFilters = () => {
+    setDatePreset("30d");
+    setDateFrom("");
+    setDateTo("");
+    setStatusFilter("all");
+    setSearch("");
+    setAccountSearch("");
+  };
+
 
   const totals = useMemo(() => {
     const total = rows.length;
@@ -367,18 +425,41 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="h-9 w-[140px] border-border/60 bg-secondary/40">
+            <Select
+              value={datePreset}
+              onValueChange={(v) => setDatePreset(v as typeof datePreset)}
+            >
+              <SelectTrigger className="h-9 w-[150px] border-border/60 bg-secondary/40">
                 <Calendar className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="yesterday">Yesterday</SelectItem>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="today">Hari ini</SelectItem>
+                <SelectItem value="yesterday">Kemarin</SelectItem>
+                <SelectItem value="7d">7 hari terakhir</SelectItem>
+                <SelectItem value="30d">30 hari terakhir</SelectItem>
+                <SelectItem value="custom">Rentang khusus</SelectItem>
               </SelectContent>
             </Select>
+            {datePreset === "custom" && (
+              <>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-9 w-[150px] bg-secondary/40"
+                  aria-label="Dari tanggal"
+                />
+                <span className="text-xs text-muted-foreground">—</span>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-9 w-[150px] bg-secondary/40"
+                  aria-label="Sampai tanggal"
+                />
+              </>
+            )}
             <Select
               value={statusFilter}
               onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
@@ -399,12 +480,26 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari username..."
-                className="h-9 w-[220px] bg-secondary/40 pl-8"
+                placeholder="Cari nama pengirim / username..."
+                className="h-9 w-[240px] bg-secondary/40 pl-8"
               />
             </div>
+            <div className="relative">
+              <Hash className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={accountSearch}
+                onChange={(e) => setAccountSearch(e.target.value)}
+                placeholder="No. rekening pengirim..."
+                className="h-9 w-[200px] bg-secondary/40 pl-8"
+                inputMode="numeric"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Reset
+            </Button>
           </div>
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -415,6 +510,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                 <th className="px-4 py-3 text-left font-medium">Tiket</th>
                 <th className="px-4 py-3 text-left font-medium">Username</th>
                 <th className="px-4 py-3 text-left font-medium">Nama Lengkap</th>
+                <th className="px-4 py-3 text-left font-medium">Pengirim</th>
+                <th className="px-4 py-3 text-left font-medium">No. Rek Pengirim</th>
                 <th className="px-4 py-3 text-left font-medium">Group</th>
                 <th className="px-4 py-3 text-left font-medium">Jumlah Deposit</th>
                 <th className="px-4 py-3 text-left font-medium">Status</th>
@@ -425,7 +522,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <Receipt className="h-8 w-8 opacity-40" />
                       Tidak ada transaksi ditemukan
@@ -448,6 +545,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.ticket}</td>
                   <td className="px-4 py-3 font-semibold text-primary">{r.username}</td>
                   <td className="px-4 py-3">{r.fullName}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{r.senderName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.senderAccount}</td>
                   <td className="px-4 py-3 text-muted-foreground">{r.group}</td>
                   <td className="px-4 py-3 font-semibold">{rp(r.amount)}</td>
                   <td className="px-4 py-3">
