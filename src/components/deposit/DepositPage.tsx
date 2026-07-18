@@ -522,7 +522,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             <tbody>
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                  <td colSpan={12} className="px-4 py-10 text-center text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <Receipt className="h-8 w-8 opacity-40" />
                       Tidak ada transaksi ditemukan
