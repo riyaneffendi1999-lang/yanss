@@ -84,6 +84,8 @@ const NAMES = [
 const AMOUNTS = [10000, 20000, 25000, 30000, 50000, 75000, 100000, 150000];
 const ADMINS = ["madan", "riyan", "arya", "linda"];
 
+const SENDER_BANKS = ["BCA", "BRI", "BNI", "MANDIRI", "CIMB", "PERMATA"];
+
 function seedRows(channel: string, count = 24): DepositRow[] {
   // simple deterministic hash from channel
   let s = 0;
@@ -95,6 +97,8 @@ function seedRows(channel: string, count = 24): DepositRow[] {
   const rows: DepositRow[] = [];
   let baseTicket = 6570000 + Math.floor(rand() * 999);
   let mins = 20 * 60 + 3; // start at ~20:03
+  // spread rows across last 14 days ending 17/7/2026
+  const end = new Date(Date.UTC(2026, 6, 17));
   for (let i = 0; i < count; i++) {
     const [uname, fname] = NAMES[Math.floor(rand() * NAMES.length)];
     const amount = AMOUNTS[Math.floor(rand() * AMOUNTS.length)];
@@ -103,16 +107,32 @@ function seedRows(channel: string, count = 24): DepositRow[] {
     const status: DepositRow["status"] =
       statusR > 0.94 ? "Rejected" : statusR > 0.88 ? "Pending" : "Approved";
     mins -= Math.floor(rand() * 12) + 2;
+    if (mins < 0) mins = 20 * 60 + Math.floor(rand() * 60);
     const h = Math.floor(mins / 60);
     const m = mins % 60;
     const sec = Math.floor(rand() * 60);
+    const dayOffset = Math.floor(rand() * 14);
+    const d = new Date(end);
+    d.setUTCDate(d.getUTCDate() - dayOffset);
+    const iso = d.toISOString().slice(0, 10);
+    const dateStr = `${d.getUTCDate()}/${d.getUTCMonth() + 1}/${d.getUTCFullYear()}`;
+    // sender: use another random name + generated bank account number
+    const [, senderFull] = NAMES[Math.floor(rand() * NAMES.length)];
+    const bank = SENDER_BANKS[Math.floor(rand() * SENDER_BANKS.length)];
+    const acctNum =
+      String(1000 + Math.floor(rand() * 8999)) +
+      String(1000 + Math.floor(rand() * 8999)) +
+      String(10 + Math.floor(rand() * 89));
     rows.push({
       id: `${channel}-${i}`,
-      date: "17/7/2026",
+      date: dateStr,
+      iso,
       time: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`,
       ticket: "D" + baseTicket--,
       username: uname,
       fullName: fname,
+      senderName: `${senderFull} (${bank})`,
+      senderAccount: acctNum,
       group: (["Low", "Low", "Low", "Mid", "High", "VIP"] as const)[
         Math.floor(rand() * 6)
       ],
