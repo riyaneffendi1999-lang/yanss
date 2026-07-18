@@ -208,29 +208,64 @@ function StatusPill({ status }: { status: DepositRow["status"] }) {
 
 export function DepositPage({ config }: { config: DepositPageConfig }) {
   const [accountId, setAccountId] = useState(config.accounts[0]?.id ?? "");
-  const [dateFilter, setDateFilter] = useState("today");
+  const [datePreset, setDatePreset] = useState<"today" | "yesterday" | "7d" | "30d" | "custom">("30d");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<"all" | DepositRow["status"]>("all");
   const [search, setSearch] = useState("");
+  const [accountSearch, setAccountSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
   const [rows, setRows] = useState<DepositRow[]>(() => seedRows(config.channel));
 
   const account = config.accounts.find((a) => a.id === accountId) ?? config.accounts[0];
 
+  // Compute effective from/to based on preset (unless custom)
+  const { effFrom, effTo } = useMemo(() => {
+    if (datePreset === "custom") return { effFrom: dateFrom, effTo: dateTo };
+    const today = new Date("2026-07-17T00:00:00Z");
+    const toIso = today.toISOString().slice(0, 10);
+    const shift = (days: number) => {
+      const d = new Date(today);
+      d.setUTCDate(d.getUTCDate() - days);
+      return d.toISOString().slice(0, 10);
+    };
+    if (datePreset === "today") return { effFrom: toIso, effTo: toIso };
+    if (datePreset === "yesterday") return { effFrom: shift(1), effTo: shift(1) };
+    if (datePreset === "7d") return { effFrom: shift(6), effTo: toIso };
+    return { effFrom: shift(29), effTo: toIso };
+  }, [datePreset, dateFrom, dateTo]);
+
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const qa = accountSearch.trim().toLowerCase();
     return rows.filter((r) => {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (effFrom && r.iso < effFrom) return false;
+      if (effTo && r.iso > effTo) return false;
       if (
-        search &&
+        q &&
         !(
-          r.username.toLowerCase().includes(search.toLowerCase()) ||
-          r.fullName.toLowerCase().includes(search.toLowerCase()) ||
-          r.ticket.toLowerCase().includes(search.toLowerCase())
+          r.username.toLowerCase().includes(q) ||
+          r.fullName.toLowerCase().includes(q) ||
+          r.senderName.toLowerCase().includes(q) ||
+          r.ticket.toLowerCase().includes(q)
         )
       )
         return false;
+      if (qa && !r.senderAccount.toLowerCase().includes(qa)) return false;
       return true;
     });
-  }, [rows, statusFilter, search]);
+  }, [rows, statusFilter, search, accountSearch, effFrom, effTo]);
+
+  const resetFilters = () => {
+    setDatePreset("30d");
+    setDateFrom("");
+    setDateTo("");
+    setStatusFilter("all");
+    setSearch("");
+    setAccountSearch("");
+  };
+
 
   const totals = useMemo(() => {
     const total = rows.length;
