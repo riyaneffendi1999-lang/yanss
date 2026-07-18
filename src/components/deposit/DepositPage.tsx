@@ -52,10 +52,13 @@ export interface DepositPageConfig {
 interface DepositRow {
   id: string;
   date: string; // dd/M/yyyy
+  iso: string; // yyyy-mm-dd for range filtering
   time: string; // HH:mm:ss
   ticket: string;
   username: string;
   fullName: string;
+  senderName: string;
+  senderAccount: string;
   group: "Low" | "Mid" | "High" | "VIP";
   amount: number;
   status: "Approved" | "Pending" | "Rejected";
