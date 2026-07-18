@@ -425,18 +425,41 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="h-9 w-[140px] border-border/60 bg-secondary/40">
+            <Select
+              value={datePreset}
+              onValueChange={(v) => setDatePreset(v as typeof datePreset)}
+            >
+              <SelectTrigger className="h-9 w-[150px] border-border/60 bg-secondary/40">
                 <Calendar className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="yesterday">Yesterday</SelectItem>
-                <SelectItem value="7d">Last 7 days</SelectItem>
-                <SelectItem value="30d">Last 30 days</SelectItem>
+                <SelectItem value="today">Hari ini</SelectItem>
+                <SelectItem value="yesterday">Kemarin</SelectItem>
+                <SelectItem value="7d">7 hari terakhir</SelectItem>
+                <SelectItem value="30d">30 hari terakhir</SelectItem>
+                <SelectItem value="custom">Rentang khusus</SelectItem>
               </SelectContent>
             </Select>
+            {datePreset === "custom" && (
+              <>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="h-9 w-[150px] bg-secondary/40"
+                  aria-label="Dari tanggal"
+                />
+                <span className="text-xs text-muted-foreground">—</span>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="h-9 w-[150px] bg-secondary/40"
+                  aria-label="Sampai tanggal"
+                />
+              </>
+            )}
             <Select
               value={statusFilter}
               onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}
@@ -457,12 +480,26 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari username..."
-                className="h-9 w-[220px] bg-secondary/40 pl-8"
+                placeholder="Cari nama pengirim / username..."
+                className="h-9 w-[240px] bg-secondary/40 pl-8"
               />
             </div>
+            <div className="relative">
+              <Hash className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={accountSearch}
+                onChange={(e) => setAccountSearch(e.target.value)}
+                placeholder="No. rekening pengirim..."
+                className="h-9 w-[200px] bg-secondary/40 pl-8"
+                inputMode="numeric"
+              />
+            </div>
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Reset
+            </Button>
           </div>
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
