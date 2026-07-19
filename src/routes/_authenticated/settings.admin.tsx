@@ -561,8 +561,7 @@ function EditDialog({
             label="Reset Password (opsional)"
             error={form.formState.errors.password?.message}
           >
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="Kosongkan bila tidak diubah"
               {...form.register("password")}
             />
