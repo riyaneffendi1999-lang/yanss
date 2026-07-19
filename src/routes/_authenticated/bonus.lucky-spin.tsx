@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 
 export const Route = createFileRoute("/_authenticated/bonus/lucky-spin")({
   head: () => ({ meta: [{ title: "Lucky Spin — Admin Console" }] }),
@@ -25,6 +26,7 @@ type InputRow = {
 type CompleteRow = {
   id: string;
   date: string;
+  iso_date: string;
   time: string;
   username: string;
   ticket: string;
@@ -64,7 +66,7 @@ function LuckySpinPage() {
   const [pasteValue, setPasteValue] = useState("");
   const [completeRows, setCompleteRows] = useState<CompleteRow[]>([]);
   const [search, setSearch] = useState("");
-  const [period, setPeriod] = useState<"today" | "7d" | "30d" | "all">("today");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
 
   const filledCount = inputRows.filter((r) => r.ticket && r.username).length;
@@ -126,9 +128,11 @@ function LuckySpinPage() {
     if (!bonusNum || bonusNum <= 0) return toast.error("Nominal bonus tidak valid");
 
     const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const complete: CompleteRow = {
       id: row.id,
       date: now.toLocaleDateString("id-ID"),
+      iso_date: iso,
       time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       username: row.username,
       ticket: row.ticket,
@@ -140,13 +144,20 @@ function LuckySpinPage() {
     toast.success(`Bonus untuk ${row.username} berhasil diproses`);
   };
 
+  const { effFrom, effTo } = useMemo(() => {
+    const r = resolveDateRange(dateRange);
+    return { effFrom: r.from, effTo: r.to };
+  }, [dateRange]);
+
   const filteredComplete = useMemo(() => {
     const q = search.trim().toLowerCase();
     return completeRows.filter((r) => {
+      if (effFrom && r.iso_date < effFrom) return false;
+      if (effTo && r.iso_date > effTo) return false;
       if (!q) return true;
       return r.username.toLowerCase().includes(q) || r.ticket.toLowerCase().includes(q);
     });
-  }, [completeRows, search]);
+  }, [completeRows, search, effFrom, effTo]);
 
   const totalPages = Math.max(1, Math.ceil(filteredComplete.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -306,16 +317,7 @@ function LuckySpinPage() {
                   className="h-9 w-56 bg-background/60 pl-9"
                 />
               </div>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as typeof period)}
-                className="h-9 rounded-md border border-border/60 bg-background/60 px-3 text-sm"
-              >
-                <option value="today">Today</option>
-                <option value="7d">7 hari</option>
-                <option value="30d">30 hari</option>
-                <option value="all">Semua</option>
-              </select>
+              <DateRangeSelect value={dateRange} onChange={(v) => { setDateRange(v); setPage(1); }} />
             </div>
           </div>
 

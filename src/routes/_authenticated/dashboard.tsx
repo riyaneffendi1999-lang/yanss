@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import {
   ArrowUpRight,
   Banknote,
@@ -29,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DateRangeSelect, type DateRangeValue } from "@/components/common/DateRangeSelect";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Admin Console" }] }),
@@ -66,17 +68,22 @@ function statusBadge(s: string) {
 }
 
 function DashboardPage() {
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   return (
     <div>
       <PageHeader
         title="Dashboard"
         description="Ringkasan operasional realtime"
         actions={
-          <Button size="sm" className="gap-1.5">
-            <ArrowUpRight className="h-4 w-4" /> Live Report
-          </Button>
+          <>
+            <DateRangeSelect value={dateRange} onChange={setDateRange} />
+            <Button size="sm" className="gap-1.5">
+              <ArrowUpRight className="h-4 w-4" /> Live Report
+            </Button>
+          </>
         }
       />
+
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total Deposit" value={fmt(148_920_000)} delta="+12.4% vs kemarin" trend="up" icon={CircleDollarSign} index={0} />

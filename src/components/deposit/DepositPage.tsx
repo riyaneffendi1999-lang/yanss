@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   ClipboardPaste,
-  Calendar,
   Filter,
   Trash2,
   Wallet,
@@ -38,9 +37,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  DateRangeSelect,
+  resolveDateRange,
+  type DateRangeValue,
+} from "@/components/common/DateRangeSelect";
 
 export type DepositChannelKind = "bank" | "emoney" | "pulsa";
 
@@ -247,9 +251,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [bankAccounts, accountId]);
   const account = bankAccounts.find((a) => a.id === accountId);
 
-  const [datePreset, setDatePreset] = useState<"today" | "yesterday" | "7d" | "30d" | "custom">("30d");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "current_month", from: "", to: "" });
   const [statusFilter, setStatusFilter] = useState<"all" | DepositStatus>("all");
   const [search, setSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
@@ -315,20 +317,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   });
 
   const { effFrom, effTo } = useMemo(() => {
-    if (datePreset === "custom") return { effFrom: dateFrom, effTo: dateTo };
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const toIso = today.toISOString().slice(0, 10);
-    const shift = (days: number) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - days);
-      return d.toISOString().slice(0, 10);
-    };
-    if (datePreset === "today") return { effFrom: toIso, effTo: toIso };
-    if (datePreset === "yesterday") return { effFrom: shift(1), effTo: shift(1) };
-    if (datePreset === "7d") return { effFrom: shift(6), effTo: toIso };
-    return { effFrom: shift(29), effTo: toIso };
-  }, [datePreset, dateFrom, dateTo]);
+    const { from, to } = resolveDateRange(dateRange);
+    return { effFrom: from, effTo: to };
+  }, [dateRange]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -347,8 +338,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [rows, statusFilter, search, effFrom, effTo]);
 
   const resetFilters = () => {
-    setDatePreset("30d");
-    setDateFrom(""); setDateTo("");
+    setDateRange({ preset: "current_month", from: "", to: "" });
     setStatusFilter("all");
     setSearch("");
   };
@@ -362,7 +352,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     return { total, approved, pending, totalAmount, unik };
   }, [rows]);
 
-  const autoIngestPaste = async (raw: string) => {
+  const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
     const parsed = parseDepositPaste(raw);
     if (parsed.length === 0) {
@@ -375,7 +365,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       ...p,
       channel: config.channel,
       account_id: account?.id ?? null,
-      status: "Pending",
+      status,
     }));
     try {
       await insertMut.mutateAsync(payload);
@@ -526,47 +516,42 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
       {/* Toolbar + Table */}
       <div className="glass-panel soft-shadow rounded-xl">
-        <div className="flex flex-wrap items-start gap-2 border-b border-border/60 p-3">
-          <div className="flex flex-1 min-w-[300px] items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2 border-b border-border/60 p-3">
+          <div className="flex flex-1 min-w-[280px] items-center gap-2">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-secondary/60 text-muted-foreground">
               <ClipboardPaste className="h-4 w-4" />
             </div>
-            <Textarea
+            <Input
               value={pasteData}
               onChange={(e) => setPasteData(e.target.value)}
               onPaste={(e) => {
                 const raw = e.clipboardData.getData("text");
-                if (raw.trim()) {
+                if (raw && /\n|\t/.test(raw)) {
                   e.preventDefault();
-                  autoIngestPaste(raw);
+                  autoIngestPaste(raw, "Approved");
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  autoIngestPaste(pasteData, "Approved");
                 }
               }}
               placeholder="Paste data di sini."
-              className="min-h-9 bg-secondary/40 font-mono text-xs"
-              rows={2}
+              className="h-9 bg-secondary/40 font-mono text-xs"
             />
+            <Button
+              size="sm"
+              className="h-9 shrink-0"
+              onClick={() => autoIngestPaste(pasteData, "Approved")}
+              disabled={!pasteData.trim() || insertMut.isPending}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Tambah
+            </Button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Select value={datePreset} onValueChange={(v) => setDatePreset(v as typeof datePreset)}>
-              <SelectTrigger className="h-9 w-[150px] border-border/60 bg-secondary/40">
-                <Calendar className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="today">Hari ini</SelectItem>
-                <SelectItem value="yesterday">Kemarin</SelectItem>
-                <SelectItem value="7d">7 hari terakhir</SelectItem>
-                <SelectItem value="30d">30 hari terakhir</SelectItem>
-                <SelectItem value="custom">Rentang khusus</SelectItem>
-              </SelectContent>
-            </Select>
-            {datePreset === "custom" && (
-              <>
-                <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 w-[150px] bg-secondary/40" />
-                <span className="text-xs text-muted-foreground">—</span>
-                <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 w-[150px] bg-secondary/40" />
-              </>
-            )}
+            <DateRangeSelect value={dateRange} onChange={setDateRange} />
             <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
               <SelectTrigger className="h-9 w-[150px] border-border/60 bg-secondary/40">
                 <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -587,6 +572,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             <Button variant="outline" size="sm" onClick={resetFilters}>Reset</Button>
           </div>
         </div>
+
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
