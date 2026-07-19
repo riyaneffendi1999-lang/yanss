@@ -15,8 +15,7 @@ import {
   Sparkles,
   Receipt,
   Clock,
-  CheckCircle2,
-  XCircle,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -256,6 +255,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const [search, setSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const nowDate = () => new Date().toISOString().slice(0, 10);
   const nowTime = () => new Date().toTimeString().slice(0, 5);
@@ -437,8 +438,57 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
   };
 
-  const setStatus = (id: string, status: DepositStatus) =>
-    updateMut.mutate({ id, patch: { status } });
+  const openEdit = (r: DepositRow) => {
+    setEditId(r.id);
+    setForm({
+      iso_date: r.iso_date,
+      time_str: r.time_str.slice(0, 5),
+      ticket: r.ticket,
+      username: r.username,
+      full_name: r.full_name,
+      group_tier: r.group_tier ?? "",
+      account_id: r.account_id ?? account?.id ?? bankAccounts[0]?.id ?? "",
+      status: r.status,
+      amount: String(r.amount ?? ""),
+      notes: r.notes ?? "",
+    });
+    setEditOpen(true);
+  };
+
+  const onEditSubmit = async () => {
+    if (!editId) return;
+    if (!form.ticket || !form.username || !form.full_name || !form.amount) {
+      return toast.error("Lengkapi tiket, username, nama, dan jumlah");
+    }
+    const [y, m, d] = form.iso_date.split("-");
+    const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
+    const timeStr = form.time_str.length === 5 ? `${form.time_str}:00` : form.time_str;
+    try {
+      await updateMut.mutateAsync({
+        id: editId,
+        patch: {
+          account_id: form.account_id || null,
+          date_str: dateStr,
+          iso_date: form.iso_date,
+          time_str: timeStr,
+          ticket: form.ticket,
+          username: form.username,
+          full_name: form.full_name,
+          sender_name: formAccount?.account_name ?? null,
+          sender_account: formAccount?.account_number ?? null,
+          group_tier: form.group_tier || null,
+          amount: formAmountNum,
+          status: form.status,
+          notes: form.notes || null,
+        },
+      });
+      toast.success("Transaksi diperbarui");
+      setEditOpen(false);
+      setEditId(null);
+    } catch (e: unknown) {
+      toast.error("Gagal memperbarui", { description: (e as Error).message });
+    }
+  };
 
   const logo = config.logoText ?? config.channel.slice(0, 2).toUpperCase();
 
@@ -613,34 +663,23 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   <td className="px-4 py-3 text-muted-foreground">{r.group_tier}</td>
                   <td className="px-4 py-3 font-semibold">{rp(Number(r.amount))}</td>
                   <td className="px-4 py-3">
-                    <Select value={r.status} onValueChange={(v) => setStatus(r.id, v as DepositStatus)}>
-                      <SelectTrigger className="h-7 w-[130px] border-border/60 bg-transparent px-2 py-0">
-                        <StatusPill status={r.status} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <StatusPill status={r.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.admin ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      {r.status !== "Approved" && (
-                        <button onClick={() => setStatus(r.id, "Approved")} title="Approve"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {r.status !== "Pending" && (
-                        <button onClick={() => setStatus(r.id, "Pending")} title="Pending"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-amber-400">
-                          <XCircle className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      <button onClick={() => onDelete(r.id)} title="Hapus"
-                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-rose-400">
+                      <button
+                        onClick={() => openEdit(r)}
+                        title="Edit"
+                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-sky-400"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(r.id)}
+                        title="Hapus"
+                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-rose-400"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
@@ -756,6 +795,88 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Transaksi</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Tanggal</Label>
+              <Input type="date" value={form.iso_date}
+                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Jam</Label>
+              <Input type="time" value={form.time_str}
+                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tiket</Label>
+              <Input value={form.ticket}
+                onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Username</Label>
+              <Input value={form.username}
+                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nama Lengkap</Label>
+              <Input value={form.full_name}
+                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Group</Label>
+              <Input value={form.group_tier}
+                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Rekening</Label>
+              <Select value={form.account_id} onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih rekening…" /></SelectTrigger>
+                <SelectContent>
+                  {bankAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.account_name} — {a.account_number}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as DepositStatus }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Jumlah Deposit (Rp)</Label>
+              <Input inputMode="numeric" value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Keterangan</Label>
+              <Input value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Batal</Button>
+            <Button onClick={onEditSubmit} disabled={updateMut.isPending}>
+              {updateMut.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

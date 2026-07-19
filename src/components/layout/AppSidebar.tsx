@@ -8,7 +8,6 @@ import {
   Settings,
   UserCircle,
   Shield,
-  ChevronRight,
 } from "lucide-react";
 
 import {
@@ -27,11 +26,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 type Item = { title: string; url: string; icon?: React.ComponentType<{ className?: string }> };
 type Group = { label: string; icon: React.ComponentType<{ className?: string }>; items: Item[] };
@@ -96,19 +91,20 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) => pathname === url;
-  
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5 px-2 py-1.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
+        <div className="flex items-center gap-2.5 px-2 py-2">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/25">
             <Shield className="h-4 w-4" />
           </div>
           {!collapsed && (
             <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold tracking-tight">Admin Console</span>
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
+                Admin Console
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50">
                 Enterprise
               </span>
             </div>
@@ -116,14 +112,21 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="gap-1 px-1 py-2">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
               {singles.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive(item.url)}
+                    tooltip={item.title}
+                    className={cn(
+                      "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-primary/15 data-[active=true]:text-primary data-[active=true]:font-semibold",
+                    )}
+                  >
+                    <Link to={item.url} preload="intent">
                       {item.icon && <item.icon className="h-4 w-4" />}
                       <span>{item.title}</span>
                     </Link>
@@ -135,33 +138,52 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {groups.map((g) => (
-          <SidebarGroup key={g.label}>
-            <SidebarGroupLabel>{g.label}</SidebarGroupLabel>
+          <SidebarGroup key={g.label} className="py-0.5">
+            <SidebarGroupLabel
+              className={cn(
+                "flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/45",
+                collapsed && "sr-only",
+              )}
+            >
+              <g.icon className="h-3.5 w-3.5 opacity-70" />
+              <span>{g.label}</span>
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                <Collapsible defaultOpen={false} className="group/collapsible">
-                  <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                      <SidebarMenuButton tooltip={g.label}>
-                        <g.icon className="h-4 w-4" />
-                        <span>{g.label}</span>
-                        <ChevronRight className="ml-auto h-4 w-4 transition-transform group-data-[state=open]/collapsible:rotate-90" />
+              {collapsed ? (
+                <SidebarMenu>
+                  {g.items.map((it) => (
+                    <SidebarMenuItem key={it.url}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive(it.url)}
+                        tooltip={it.title}
+                        className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+                      >
+                        <Link to={it.url} preload="intent">
+                          <g.icon className="h-4 w-4" />
+                          <span>{it.title}</span>
+                        </Link>
                       </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <SidebarMenuSub>
-                        {g.items.map((it) => (
-                          <SidebarMenuSubItem key={it.url}>
-                            <SidebarMenuSubButton asChild isActive={isActive(it.url)}>
-                              <Link to={it.url}>{it.title}</Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        ))}
-                      </SidebarMenuSub>
-                    </CollapsibleContent>
-                  </SidebarMenuItem>
-                </Collapsible>
-              </SidebarMenu>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              ) : (
+                <SidebarMenuSub className="mx-3 border-l border-sidebar-border/70 pl-3">
+                  {g.items.map((it) => (
+                    <SidebarMenuSubItem key={it.url}>
+                      <SidebarMenuSubButton
+                        asChild
+                        isActive={isActive(it.url)}
+                        className="text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-primary/15 data-[active=true]:text-primary data-[active=true]:font-medium"
+                      >
+                        <Link to={it.url} preload="intent">
+                          <span>{it.title}</span>
+                        </Link>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  ))}
+                </SidebarMenuSub>
+              )}
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
@@ -171,8 +193,13 @@ export function AppSidebar() {
         <SidebarMenu>
           {footerItems.map((item) => (
             <SidebarMenuItem key={item.url}>
-              <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                <Link to={item.url}>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive(item.url)}
+                tooltip={item.title}
+                className="text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground data-[active=true]:bg-primary/15 data-[active=true]:text-primary"
+              >
+                <Link to={item.url} preload="intent">
                   {item.icon && <item.icon className="h-4 w-4" />}
                   <span>{item.title}</span>
                 </Link>
