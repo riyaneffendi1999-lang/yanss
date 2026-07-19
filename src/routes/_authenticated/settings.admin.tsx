@@ -173,7 +173,13 @@ function ManageAdminPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (v: Parameters<typeof updateFn>[0]["data"]) => updateFn({ data: v }),
+    mutationFn: (v: {
+      id: string;
+      full_name?: string;
+      role?: "head" | "supervisor" | "ast_spv" | "staff";
+      is_active?: boolean;
+      password?: string;
+    }) => updateFn({ data: v }),
     onSuccess: () => {
       toast.success("Admin diperbarui");
       setEditRow(null);
