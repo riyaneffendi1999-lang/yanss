@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Trash2, Check, Search, Calendar, Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -61,13 +61,35 @@ function parseTickets(raw: string): string[] {
     .filter((t) => t.length >= 9 && t.length <= 12 && /^[A-Z0-9]+$/.test(t));
 }
 
+const LS_INPUT_KEY = "lucky-spin/input-rows";
+const LS_COMPLETE_KEY = "lucky-spin/complete-rows";
+
+function loadLS<T>(key: string, fallback: T): T {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch { return fallback; }
+}
+
 function LuckySpinPage() {
-  const [inputRows, setInputRows] = useState<InputRow[]>(() => makeEmptyRows(MAX_INPUT_TICKETS));
+  const [inputRows, setInputRows] = useState<InputRow[]>(() =>
+    loadLS<InputRow[]>(LS_INPUT_KEY, makeEmptyRows(MAX_INPUT_TICKETS)),
+  );
   const [pasteValue, setPasteValue] = useState("");
-  const [completeRows, setCompleteRows] = useState<CompleteRow[]>([]);
+  const [completeRows, setCompleteRows] = useState<CompleteRow[]>(() =>
+    loadLS<CompleteRow[]>(LS_COMPLETE_KEY, []),
+  );
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    try { window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows)); } catch { /* ignore */ }
+  }, [inputRows]);
+  useEffect(() => {
+    try { window.localStorage.setItem(LS_COMPLETE_KEY, JSON.stringify(completeRows)); } catch { /* ignore */ }
+  }, [completeRows]);
 
   const filledCount = inputRows.filter((r) => r.ticket && r.username).length;
 
