@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Shield, Save, RotateCcw } from "lucide-react";
@@ -127,8 +128,8 @@ function RolesPage() {
             </TableHeader>
             <TableBody>
               {Object.entries(grouped).map(([group, perms]) => (
-                <>
-                  <TableRow key={`h-${group}`} className="bg-muted/40 hover:bg-muted/40">
+                <Fragment key={group}>
+                  <TableRow className="bg-muted/40 hover:bg-muted/40">
                     <TableCell colSpan={roles.length + 1} className="py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {group}
                     </TableCell>
@@ -150,7 +151,7 @@ function RolesPage() {
                       ))}
                     </TableRow>
                   ))}
-                </>
+                </Fragment>
               ))}
             </TableBody>
           </Table>
