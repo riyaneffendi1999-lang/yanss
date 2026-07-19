@@ -21,29 +21,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  DateRangeSelect,
-  resolveDateRange,
-  type DateRangeValue,
-} from "@/components/common/DateRangeSelect";
+import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 
 export type DepositChannelKind = "bank" | "emoney" | "pulsa";
 
@@ -65,28 +49,10 @@ export interface DepositPageConfig {
   accounts?: DepositAccount[];
 }
 
-export type DepositStatus =
-  | "Approved"
-  | "Pending"
-  | "Unik"
-  | "Pindah dana"
-  | "Cuci Pulsa"
-  | "Biaya admin";
+export type DepositStatus = "Approved" | "Pending" | "Unik" | "Pindah dana" | "Cuci Pulsa" | "Biaya admin";
 
-const STATUS_OPTIONS_BANK: DepositStatus[] = [
-  "Approved",
-  "Pending",
-  "Unik",
-  "Pindah dana",
-  "Biaya admin",
-];
-const STATUS_OPTIONS_PULSA: DepositStatus[] = [
-  "Approved",
-  "Pending",
-  "Unik",
-  "Cuci Pulsa",
-  "Biaya admin",
-];
+const STATUS_OPTIONS_BANK: DepositStatus[] = ["Approved", "Pending", "Unik", "Pindah dana", "Biaya admin"];
+const STATUS_OPTIONS_PULSA: DepositStatus[] = ["Approved", "Pending", "Unik", "Cuci Pulsa", "Biaya admin"];
 
 interface DepositRow {
   id: string;
@@ -118,12 +84,21 @@ interface BankAccountRow {
   online: boolean;
 }
 
-const rp = (n: number) =>
-  "Rp " + n.toLocaleString("id-ID", { maximumFractionDigits: 0 });
+const rp = (n: number) => "Rp " + n.toLocaleString("id-ID", { maximumFractionDigits: 0 });
 
 const MONTHS: Record<string, number> = {
-  jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6,
-  jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12,
+  jan: 1,
+  feb: 2,
+  mar: 3,
+  apr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  aug: 8,
+  sep: 9,
+  oct: 10,
+  nov: 11,
+  dec: 12,
 };
 
 export function parseDepositPaste(text: string): Array<{
@@ -182,18 +157,63 @@ export function parseDepositPaste(text: string): Array<{
 }
 
 const STAT_TONES = {
-  blue:    { bg: "bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25",           label: "text-sky-700 dark:text-sky-300",         value: "text-sky-600 dark:text-sky-300",         hint: "text-sky-700/60 dark:text-sky-200/60" },
-  amber:   { bg: "bg-amber-50 dark:bg-amber-500/10 border-amber-200/70 dark:border-amber-500/25",   label: "text-amber-800 dark:text-amber-300",     value: "text-amber-600 dark:text-amber-300",     hint: "text-amber-700/60 dark:text-amber-200/60" },
-  emerald: { bg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200/70 dark:border-emerald-500/25", label: "text-emerald-800 dark:text-emerald-300", value: "text-emerald-600 dark:text-emerald-300", hint: "text-emerald-700/60 dark:text-emerald-200/60" },
-  teal:    { bg: "bg-teal-50 dark:bg-teal-500/10 border-teal-200/70 dark:border-teal-500/25",       label: "text-teal-800 dark:text-teal-300",       value: "text-teal-600 dark:text-teal-300",       hint: "text-teal-700/60 dark:text-teal-200/60" },
-  violet:  { bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-200/70 dark:border-violet-500/25", label: "text-violet-800 dark:text-violet-300",   value: "text-violet-600 dark:text-violet-300",   hint: "text-violet-700/60 dark:text-violet-200/60" },
-  indigo:  { bg: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200/70 dark:border-indigo-500/25", label: "text-indigo-800 dark:text-indigo-300",   value: "text-indigo-600 dark:text-indigo-300",   hint: "text-indigo-700/60 dark:text-indigo-200/60" },
-  rose:    { bg: "bg-rose-50 dark:bg-rose-500/10 border-rose-200/70 dark:border-rose-500/25",       label: "text-rose-800 dark:text-rose-300",       value: "text-rose-600 dark:text-rose-300",       hint: "text-rose-700/60 dark:text-rose-200/60" },
+  blue: {
+    bg: "bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25",
+    label: "text-sky-700 dark:text-sky-300",
+    value: "text-sky-600 dark:text-sky-300",
+    hint: "text-sky-700/60 dark:text-sky-200/60",
+  },
+  amber: {
+    bg: "bg-amber-50 dark:bg-amber-500/10 border-amber-200/70 dark:border-amber-500/25",
+    label: "text-amber-800 dark:text-amber-300",
+    value: "text-amber-600 dark:text-amber-300",
+    hint: "text-amber-700/60 dark:text-amber-200/60",
+  },
+  emerald: {
+    bg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200/70 dark:border-emerald-500/25",
+    label: "text-emerald-800 dark:text-emerald-300",
+    value: "text-emerald-600 dark:text-emerald-300",
+    hint: "text-emerald-700/60 dark:text-emerald-200/60",
+  },
+  teal: {
+    bg: "bg-teal-50 dark:bg-teal-500/10 border-teal-200/70 dark:border-teal-500/25",
+    label: "text-teal-800 dark:text-teal-300",
+    value: "text-teal-600 dark:text-teal-300",
+    hint: "text-teal-700/60 dark:text-teal-200/60",
+  },
+  violet: {
+    bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-200/70 dark:border-violet-500/25",
+    label: "text-violet-800 dark:text-violet-300",
+    value: "text-violet-600 dark:text-violet-300",
+    hint: "text-violet-700/60 dark:text-violet-200/60",
+  },
+  indigo: {
+    bg: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200/70 dark:border-indigo-500/25",
+    label: "text-indigo-800 dark:text-indigo-300",
+    value: "text-indigo-600 dark:text-indigo-300",
+    hint: "text-indigo-700/60 dark:text-indigo-200/60",
+  },
+  rose: {
+    bg: "bg-rose-50 dark:bg-rose-500/10 border-rose-200/70 dark:border-rose-500/25",
+    label: "text-rose-800 dark:text-rose-300",
+    value: "text-rose-600 dark:text-rose-300",
+    hint: "text-rose-700/60 dark:text-rose-200/60",
+  },
 } as const;
 
 function StatTile({
-  label, value, hint, tone, index,
-}: { label: string; value: string; hint?: string; tone: keyof typeof STAT_TONES; index: number; }) {
+  label,
+  value,
+  hint,
+  tone,
+  index,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  tone: keyof typeof STAT_TONES;
+  index: number;
+}) {
   const t = STAT_TONES[tone];
   return (
     <motion.div
@@ -209,7 +229,6 @@ function StatTile({
   );
 }
 
-
 const STATUS_STYLES: Record<DepositStatus, { pill: string; dot: string }> = {
   Approved: { pill: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400" },
   Pending: { pill: "bg-amber-500/15 text-amber-300 border-amber-500/30", dot: "bg-amber-400" },
@@ -222,7 +241,9 @@ const STATUS_STYLES: Record<DepositStatus, { pill: string; dot: string }> = {
 function StatusPill({ status }: { status: DepositStatus }) {
   const s = STATUS_STYLES[status] ?? STATUS_STYLES.Pending;
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium", s.pill)}>
+    <span
+      className={cn("inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium", s.pill)}
+    >
       <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} />
       {status}
     </span>
@@ -286,7 +307,11 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     notes: "",
   });
 
-  const { data: rows = [], isFetching, refetch } = useQuery<DepositRow[]>({
+  const {
+    data: rows = [],
+    isFetching,
+    refetch,
+  } = useQuery<DepositRow[]>({
     queryKey,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -312,7 +337,10 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("deposits" as never).delete().eq("id", id);
+      const { error } = await supabase
+        .from("deposits" as never)
+        .delete()
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey }),
@@ -344,12 +372,16 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (effFrom && r.iso_date < effFrom) return false;
       if (effTo && r.iso_date > effTo) return false;
-      if (q && !(
-        r.username.toLowerCase().includes(q) ||
-        r.full_name.toLowerCase().includes(q) ||
-        (r.sender_name ?? "").toLowerCase().includes(q) ||
-        r.ticket.toLowerCase().includes(q)
-      )) return false;
+      if (
+        q &&
+        !(
+          r.username.toLowerCase().includes(q) ||
+          r.full_name.toLowerCase().includes(q) ||
+          (r.sender_name ?? "").toLowerCase().includes(q) ||
+          r.ticket.toLowerCase().includes(q)
+        )
+      )
+        return false;
       return true;
     });
   }, [rows, statusFilter, search, effFrom, effTo, accountId]);
@@ -360,9 +392,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     setSearch("");
   };
 
-  const GROUP_OPTIONS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
-  const STATUS_OPTIONS: DepositStatus[] =
-    config.kind === "pulsa" ? STATUS_OPTIONS_PULSA : STATUS_OPTIONS_BANK;
+  const GROUP_OPTIONS = ["VIP", "High", "Medium", "Low", "New Registration"] as const;
+  const STATUS_OPTIONS: DepositStatus[] = config.kind === "pulsa" ? STATUS_OPTIONS_PULSA : STATUS_OPTIONS_BANK;
   const OUTFLOW_STATUS: DepositStatus = config.kind === "pulsa" ? "Cuci Pulsa" : "Pindah dana";
 
   const totals = useMemo(() => {
@@ -389,7 +420,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   // Pagination — 20 rows per page
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [statusFilter, search, effFrom, effTo, accountId]);
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, search, effFrom, effTo, accountId]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
@@ -451,22 +484,24 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
     const timeStr = form.time_str.length === 5 ? `${form.time_str}:00` : form.time_str;
     try {
-      await insertMut.mutateAsync([{
-        channel: config.channel,
-        account_id: form.account_id || null,
-        date_str: dateStr,
-        iso_date: form.iso_date,
-        time_str: timeStr,
-        ticket: form.ticket,
-        username: form.username,
-        full_name: form.full_name,
-        sender_name: formAccount?.account_name ?? null,
-        sender_account: formAccount?.account_number ?? null,
-        group_tier: form.group_tier || null,
-        amount: formAmountNum,
-        status: form.status,
-        notes: form.notes || null,
-      }]);
+      await insertMut.mutateAsync([
+        {
+          channel: config.channel,
+          account_id: form.account_id || null,
+          date_str: dateStr,
+          iso_date: form.iso_date,
+          time_str: timeStr,
+          ticket: form.ticket,
+          username: form.username,
+          full_name: form.full_name,
+          sender_name: formAccount?.account_name ?? null,
+          sender_account: formAccount?.account_number ?? null,
+          group_tier: form.group_tier || null,
+          amount: formAmountNum,
+          status: form.status,
+          notes: form.notes || null,
+        },
+      ]);
       toast.success("Transaksi ditambahkan");
       setAddOpen(false);
     } catch (e: unknown) {
@@ -475,8 +510,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   };
 
   const onDelete = async (id: string) => {
-    try { await deleteMut.mutateAsync(id); toast.success("Transaksi dihapus"); }
-    catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
+    try {
+      await deleteMut.mutateAsync(id);
+      toast.success("Transaksi dihapus");
+    } catch (e: unknown) {
+      toast.error("Gagal hapus", { description: (e as Error).message });
+    }
   };
 
   const openEdit = (r: DepositRow) => {
@@ -538,12 +577,18 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className={cn("flex h-11 w-11 items-center justify-center rounded-lg text-sm font-bold text-white soft-shadow",
-            config.accentClass ?? "bg-gradient-to-br from-sky-500 to-blue-700")}>
+          <div
+            className={cn(
+              "flex h-11 w-11 items-center justify-center rounded-lg text-sm font-bold text-white soft-shadow",
+              config.accentClass ?? "bg-gradient-to-br from-sky-500 to-blue-700",
+            )}
+          >
             {logo}
           </div>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tracking Money</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              Tracking Money
+            </div>
             <h1 className="text-2xl font-semibold tracking-tight">{config.channel}</h1>
           </div>
         </div>
@@ -571,10 +616,14 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
           ) : (
             <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger className="border-border/60 bg-secondary/40"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="border-border/60 bg-secondary/40">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {bankAccounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>{a.account_name} — {a.account_number}</SelectItem>
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.account_name} — {a.account_number}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -592,19 +641,32 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             <Wallet className="h-3.5 w-3.5" /> Saldo Akhir
           </div>
           <div className="text-2xl font-semibold tracking-tight text-emerald-300">{rp(totals.computedBalance)}</div>
-          <div className="mt-0.5 text-[11px] text-muted-foreground">Saldo awal {rp(Number(account?.opening_balance ?? 0))}</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            Saldo awal {rp(Number(account?.opening_balance ?? 0))}
+          </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <StatTile index={0} tone="blue"   label="Total Transaksi"           value={String(totals.total)}   hint={`${totals.approved} approved`} />
-        <StatTile index={1} tone="amber"  label="Total Pending"             value={String(totals.pending)} hint="Perlu diproses" />
-        <StatTile index={2} tone="teal"   label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"} value={String(totals.outCount)} hint="trx" />
-        <StatTile index={3} tone="violet" label="Total Unik"                value={String(totals.unik)}    hint="trx" />
-        <StatTile index={4} tone="indigo" label="Total Biaya Admin"         value={String(totals.feeCount)} hint="trx" />
+        <StatTile
+          index={0}
+          tone="blue"
+          label="Total Transaksi"
+          value={String(totals.total)}
+          hint={`${totals.approved} approved`}
+        />
+        <StatTile index={1} tone="amber" label="Total Pending" value={String(totals.pending)} hint="Perlu diproses" />
+        <StatTile
+          index={2}
+          tone="teal"
+          label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"}
+          value={String(totals.outCount)}
+          hint="trx"
+        />
+        <StatTile index={3} tone="violet" label="Total Unik" value={String(totals.unik)} hint="trx" />
+        <StatTile index={4} tone="indigo" label="Total Biaya Admin" value={String(totals.feeCount)} hint="trx" />
       </div>
-
 
       {/* Toolbar + Table */}
       <div className="glass-panel soft-shadow rounded-xl">
@@ -652,19 +714,26 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
                 {STATUS_OPTIONS.map((s) => (
-                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama / username / tiket..." className="h-9 w-[260px] bg-secondary/40 pl-8" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Cari nama / username / tiket..."
+                className="h-9 w-[260px] bg-secondary/40 pl-8"
+              />
             </div>
-            <Button variant="outline" size="sm" onClick={resetFilters}>Reset</Button>
+            <Button variant="outline" size="sm" onClick={resetFilters}>
+              Reset
+            </Button>
           </div>
         </div>
-
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -697,7 +766,10 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                 <tr key={r.id} className="border-t border-border/50 transition-colors hover:bg-secondary/30">
                   <td className="px-4 py-3 text-muted-foreground">{r.date_str}</td>
                   <td className="px-4 py-3 text-muted-foreground">
-                    <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3 opacity-60" />{r.time_str}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3 opacity-60" />
+                      {r.time_str}
+                    </span>
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{r.ticket}</td>
                   <td className="px-4 py-3 font-semibold text-primary">{r.username}</td>
@@ -734,8 +806,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
           <div>
-            Menampilkan {paged.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}
-            –{(safePage - 1) * PAGE_SIZE + paged.length} dari {filtered.length} transaksi
+            Menampilkan {paged.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–
+            {(safePage - 1) * PAGE_SIZE + paged.length} dari {filtered.length} transaksi
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -763,7 +835,6 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
         </div>
       </div>
 
-
       {/* Add dialog — matches reference layout */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md">
@@ -773,42 +844,65 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Tanggal</Label>
-              <Input type="date" value={form.iso_date}
-                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))} />
+              <Input
+                type="date"
+                value={form.iso_date}
+                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Jam</Label>
-              <Input type="time" value={form.time_str}
-                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))} />
+              <Input
+                type="time"
+                value={form.time_str}
+                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Tiket</Label>
-              <Input value={form.ticket} placeholder="Nomor tiket…"
-                onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))} />
+              <Input
+                value={form.ticket}
+                placeholder="Nomor tiket…"
+                onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Username</Label>
-              <Input value={form.username} placeholder="Username member…"
-                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+              <Input
+                value={form.username}
+                placeholder="Username member…"
+                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Nama Lengkap</Label>
-              <Input value={form.full_name} placeholder="Nama lengkap member…"
-                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+              <Input
+                value={form.full_name}
+                placeholder="Nama lengkap member…"
+                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
               <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih group…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                  {GROUP_OPTIONS.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>
               <Select value={form.account_id} onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih rekening…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih rekening…" />
+                </SelectTrigger>
                 <SelectContent>
                   {bankAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
@@ -825,38 +919,55 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
             <div className="col-span-2 grid grid-cols-2 gap-3">
               <div className="rounded-md border border-border/60 bg-secondary/40 p-3">
-                <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Saldo akhir saat ini</div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                  Saldo akhir saat ini
+                </div>
                 <div className="mt-1 font-semibold">{rp(Number(formAccount?.balance ?? 0))}</div>
               </div>
               <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
-                <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-400">Saldo setelah transaksi</div>
+                <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-400">
+                  Saldo setelah transaksi
+                </div>
                 <div className="mt-1 font-semibold text-emerald-400">{rp(saldoSetelah)}</div>
               </div>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as DepositStatus }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Jumlah Deposit (Rp)</Label>
-              <Input inputMode="numeric" value={form.amount} placeholder="50.000"
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+              <Input
+                inputMode="numeric"
+                value={form.amount}
+                placeholder="50.000"
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Keterangan</Label>
-              <Input value={form.notes} placeholder="Transfer manual, dll"
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+              <Input
+                value={form.notes}
+                placeholder="Transfer manual, dll"
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Batal</Button>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Batal
+            </Button>
             <Button onClick={onAddSubmit} disabled={insertMut.isPending}>
               {insertMut.isPending ? "Menyimpan..." : "Simpan"}
             </Button>
@@ -865,7 +976,13 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       </Dialog>
 
       {/* Edit dialog */}
-      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditId(null); }}>
+      <Dialog
+        open={editOpen}
+        onOpenChange={(o) => {
+          setEditOpen(o);
+          if (!o) setEditId(null);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Transaksi</DialogTitle>
@@ -873,42 +990,53 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Tanggal</Label>
-              <Input type="date" value={form.iso_date}
-                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))} />
+              <Input
+                type="date"
+                value={form.iso_date}
+                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Jam</Label>
-              <Input type="time" value={form.time_str}
-                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))} />
+              <Input
+                type="time"
+                value={form.time_str}
+                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Tiket</Label>
-              <Input value={form.ticket}
-                onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))} />
+              <Input value={form.ticket} onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Username</Label>
-              <Input value={form.username}
-                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+              <Input value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Nama Lengkap</Label>
-              <Input value={form.full_name}
-                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+              <Input value={form.full_name} onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
               <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih group…" />
+                </SelectTrigger>
                 <SelectContent>
-                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                  {GROUP_OPTIONS.map((g) => (
+                    <SelectItem key={g} value={g}>
+                      {g}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>
               <Select value={form.account_id} onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Pilih rekening…" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih rekening…" />
+                </SelectTrigger>
                 <SelectContent>
                   {bankAccounts.map((a) => (
                     <SelectItem key={a.id} value={a.id}>
@@ -921,27 +1049,35 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             <div className="col-span-2 space-y-1.5">
               <Label>Status</Label>
               <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as DepositStatus }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Jumlah Deposit (Rp)</Label>
-              <Input inputMode="numeric" value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+              <Input
+                inputMode="numeric"
+                value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+              />
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Keterangan</Label>
-              <Input value={form.notes}
-                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+              <Input value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>Batal</Button>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Batal
+            </Button>
             <Button onClick={onEditSubmit} disabled={updateMut.isPending}>
               {updateMut.isPending ? "Menyimpan..." : "Simpan Perubahan"}
             </Button>
@@ -951,4 +1087,3 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     </div>
   );
 }
-
