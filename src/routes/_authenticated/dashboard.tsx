@@ -211,7 +211,8 @@ function DashboardPage() {
     return map;
   }, [inRange, bonusTotals]);
 
-  // 7-day trend: amount + count
+  // 7-day trend: amount + count (with Indonesian day labels)
+  const DAY_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
   const trend = useMemo(() => {
     const days: { day: string; amount: number; count: number }[] = [];
     const today = new Date();
@@ -222,7 +223,7 @@ function DashboardPage() {
       const iso = d.toISOString().slice(0, 10);
       const day = deposits.filter((r) => r.iso_date === iso);
       const sum = day.reduce((s, r) => s + Number(r.amount || 0), 0);
-      days.push({ day: `${d.getDate()}/${d.getMonth() + 1}`, amount: sum, count: day.length });
+      days.push({ day: `${DAY_ID[d.getDay()]}, ${d.getDate()}`, amount: sum, count: day.length });
     }
     return days;
   }, [deposits]);
