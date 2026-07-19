@@ -725,15 +725,37 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-          <div>Menampilkan {filtered.length} dari {rows.length} transaksi</div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+          <div>
+            Menampilkan {paged.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}
+            –{(safePage - 1) * PAGE_SIZE + paged.length} dari {filtered.length} transaksi
+          </div>
           <div className="flex items-center gap-2">
-            <ArrowLeftRight className="h-3.5 w-3.5" />
-            <Sparkles className="h-3.5 w-3.5" />
-            Tersinkron dengan database
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+            >
+              Sebelumnya
+            </Button>
+            <span className="tabular-nums">
+              Hal {safePage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+            >
+              Berikutnya
+            </Button>
           </div>
         </div>
       </div>
+
 
       {/* Add dialog — matches reference layout */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
