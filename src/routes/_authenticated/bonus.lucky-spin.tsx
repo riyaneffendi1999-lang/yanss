@@ -128,9 +128,11 @@ function LuckySpinPage() {
     if (!bonusNum || bonusNum <= 0) return toast.error("Nominal bonus tidak valid");
 
     const now = new Date();
+    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const complete: CompleteRow = {
       id: row.id,
       date: now.toLocaleDateString("id-ID"),
+      iso_date: iso,
       time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
       username: row.username,
       ticket: row.ticket,
@@ -142,13 +144,20 @@ function LuckySpinPage() {
     toast.success(`Bonus untuk ${row.username} berhasil diproses`);
   };
 
+  const { effFrom, effTo } = useMemo(() => {
+    const r = resolveDateRange(dateRange);
+    return { effFrom: r.from, effTo: r.to };
+  }, [dateRange]);
+
   const filteredComplete = useMemo(() => {
     const q = search.trim().toLowerCase();
     return completeRows.filter((r) => {
+      if (effFrom && r.iso_date < effFrom) return false;
+      if (effTo && r.iso_date > effTo) return false;
       if (!q) return true;
       return r.username.toLowerCase().includes(q) || r.ticket.toLowerCase().includes(q);
     });
-  }, [completeRows, search]);
+  }, [completeRows, search, effFrom, effTo]);
 
   const totalPages = Math.max(1, Math.ceil(filteredComplete.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
