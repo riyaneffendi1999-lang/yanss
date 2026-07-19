@@ -66,7 +66,7 @@ function LuckySpinPage() {
   const [pasteValue, setPasteValue] = useState("");
   const [completeRows, setCompleteRows] = useState<CompleteRow[]>([]);
   const [search, setSearch] = useState("");
-  const [period, setPeriod] = useState<"today" | "7d" | "30d" | "all">("today");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
 
   const filledCount = inputRows.filter((r) => r.ticket && r.username).length;
