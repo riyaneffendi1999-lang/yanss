@@ -15,7 +15,9 @@ import {
   Activity as ActivityIcon,
 } from "lucide-react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
   LineChart,
   ResponsiveContainer,
