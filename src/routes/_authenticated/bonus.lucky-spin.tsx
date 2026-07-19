@@ -249,7 +249,7 @@ function LuckySpinPage() {
                 </tr>
               </thead>
               <tbody>
-                {inputRows.map((row) => (
+                {pagedInput.map((row) => (
                   <tr key={row.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
                     <td className="px-5 py-2.5">
                       <Input
