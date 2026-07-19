@@ -313,10 +313,6 @@ function LuckySpinPage() {
               {filledCount} terisi dari {inputRows.length} baris
             </span>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={addRow} className="h-7 gap-1 text-xs">
-                <Plus className="size-3.5" />
-                Baris baru
-              </Button>
               <Pagination page={currentInputPage} totalPages={inputTotalPages} onChange={setInputPage} />
             </div>
           </div>
