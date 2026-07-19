@@ -308,14 +308,17 @@ function LuckySpinPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
             <span>
               {filledCount} terisi dari {inputRows.length} baris
             </span>
-            <Button size="sm" variant="ghost" onClick={addRow} className="h-7 gap-1 text-xs">
-              <Plus className="size-3.5" />
-              Baris baru
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={addRow} className="h-7 gap-1 text-xs">
+                <Plus className="size-3.5" />
+                Baris baru
+              </Button>
+              <Pagination page={currentInputPage} totalPages={inputTotalPages} onChange={setInputPage} />
+            </div>
           </div>
         </motion.section>
 
