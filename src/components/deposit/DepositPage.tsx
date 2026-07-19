@@ -597,11 +597,11 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
       {/* Stats */}
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <StatTile index={0} tone="blue" label="Total Transaksi" value={String(totals.total)} hint={`${totals.approved} approved`} />
-        <StatTile index={1} tone="amber" label="Total Pending" value={String(totals.pending)} hint="Perlu diproses" />
-        <StatTile index={2} tone="emerald" label="Total Nominal" value={rp(totals.totalAmount)} hint="Akumulasi" />
-        <StatTile index={3} tone="violet" label="Total Unik" value={String(totals.unik)} hint="trx" />
-        <StatTile index={4} tone="rose" label="Approved" value={String(totals.approved)} hint="trx" />
+        <StatTile index={0} tone="blue"   label="Total Transaksi"           value={String(totals.total)}   hint={`${totals.approved} approved`} />
+        <StatTile index={1} tone="amber"  label="Total Pending"             value={String(totals.pending)} hint="Perlu diproses" />
+        <StatTile index={2} tone="teal"   label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"} value={String(totals.outCount)} hint="trx" />
+        <StatTile index={3} tone="violet" label="Total Unik"                value={String(totals.unik)}    hint="trx" />
+        <StatTile index={4} tone="indigo" label="Total Biaya Admin"         value={String(totals.feeCount)} hint="trx" />
       </div>
 
 
