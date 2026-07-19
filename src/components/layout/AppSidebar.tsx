@@ -7,8 +7,8 @@ import {
   Gift,
   Settings,
   UserCircle,
-  Shield,
 } from "lucide-react";
+import logoAsset from "@/assets/maxslot88-logo.png.asset.json";
 
 import {
   Sidebar,
@@ -95,19 +95,18 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2.5 px-2 py-2">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-md shadow-primary/25">
-            <Shield className="h-4 w-4" />
-          </div>
+        <div className="flex flex-col items-center gap-2 px-2 py-4">
+          <Link to="/dashboard" className="block">
+            <img
+              src={logoAsset.url}
+              alt="MAXSLOT88"
+              className="h-16 w-auto object-contain drop-shadow-lg transition-transform hover:scale-105"
+            />
+          </Link>
           {!collapsed && (
-            <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
-                Admin Console
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50">
-                Enterprise
-              </span>
-            </div>
+            <span className="text-sm font-semibold tracking-tight text-sidebar-foreground">
+              Admin Maxslot88
+            </span>
           )}
         </div>
       </SidebarHeader>
