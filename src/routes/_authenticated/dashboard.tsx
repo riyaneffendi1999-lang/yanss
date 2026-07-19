@@ -152,7 +152,7 @@ function DashboardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deposits" as never)
-        .select("id,channel,iso_date,amount,status,username,full_name")
+        .select("id,channel,iso_date,amount,status,username,full_name,group_tier")
         .order("iso_date", { ascending: false })
         .limit(1000);
       if (error) throw error;
