@@ -209,7 +209,7 @@ function LuckySpinPage() {
         </div>
       </motion.div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid items-start gap-6 xl:grid-cols-2">
         {/* ================= INPUT DATA ================= */}
         <motion.section
           initial={{ opacity: 0, y: 12 }}
