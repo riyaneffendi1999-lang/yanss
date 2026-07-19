@@ -207,12 +207,12 @@ function DashboardPage() {
     return map;
   }, [inRange, bonusTotals]);
 
-  // 14-day trend: amount + count
+  // 7-day trend: amount + count
   const trend = useMemo(() => {
     const days: { day: string; amount: number; count: number }[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const iso = d.toISOString().slice(0, 10);
@@ -223,11 +223,45 @@ function DashboardPage() {
     return days;
   }, [deposits]);
 
+  // Group totals aggregated across all deposits in range (VIP/High/Low/New Reg/Reguler)
+  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
+  const GROUP_COLORS: Record<string, string> = {
+    VIP: "rgb(251 191 36)",
+    High: "rgb(244 63 94)",
+    Low: "rgb(56 189 248)",
+    "New Registration": "rgb(52 211 153)",
+    Reguler: "rgb(167 139 250)",
+  };
+  const memberGroupTotals = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const g of MEMBER_GROUPS) map[g] = { total: 0, count: 0 };
+    for (const r of inRange as (DepositRow & { group_tier?: string | null })[]) {
+      const raw = String(r.group_tier ?? "").trim();
+      const key =
+        /vip/i.test(raw) ? "VIP" :
+        /high/i.test(raw) ? "High" :
+        /low/i.test(raw) ? "Low" :
+        /new/i.test(raw) ? "New Registration" :
+        "Reguler";
+      map[key].total += Number(r.amount || 0);
+      map[key].count += 1;
+    }
+    return map;
+  }, [inRange]);
+
+  const CHANNEL_COLORS: Record<string, string> = {
+    BCA: "rgb(56 189 248)", BNI: "rgb(251 146 60)", BRI: "rgb(59 130 246)", MANDIRI: "rgb(250 204 21)",
+    DANA: "rgb(96 165 250)", OVO: "rgb(167 139 250)", GOPAY: "rgb(52 211 153)", LINKAJA: "rgb(248 113 113)",
+    TELKOMSEL: "rgb(244 63 94)", XL: "rgb(45 212 191)",
+  };
   const channelStats = useMemo(() => {
     const map = new Map<string, number>();
     inRange.forEach((r) => map.set(r.channel, (map.get(r.channel) ?? 0) + Number(r.amount || 0)));
-    return Array.from(map.entries()).map(([channel, amount]) => ({ channel, amount }));
+    return Array.from(map.entries()).map(([channel, amount]) => ({
+      channel, amount, fill: CHANNEL_COLORS[String(channel).toUpperCase()] ?? "var(--color-primary)",
+    }));
   }, [inRange]);
+
 
   const topMembers = useMemo(() => {
     const map = new Map<string, { username: string; full_name: string; total: number; count: number }>();
