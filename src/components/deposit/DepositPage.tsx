@@ -589,6 +589,26 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
         <StatTile index={4} tone="rose" label="Approved" value={String(totals.approved)} hint="trx" />
       </div>
 
+      {/* Group Totals */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {GROUP_OPTIONS.map((g) => {
+          const t = groupTotals[g];
+          return (
+            <div
+              key={g}
+              className={cn(
+                "relative overflow-hidden rounded-xl bg-gradient-to-br p-4 ring-1",
+                GROUP_TONES[g],
+              )}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wider">{g}</div>
+              <div className="mt-1 text-lg font-semibold text-foreground">{rp(t.total)}</div>
+              <div className="text-[11px] text-muted-foreground">{t.count} transaksi</div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Toolbar + Table */}
       <div className="glass-panel soft-shadow rounded-xl">
         <div className="flex flex-wrap items-center gap-2 border-b border-border/60 p-3">
