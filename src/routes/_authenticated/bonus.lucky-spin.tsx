@@ -104,10 +104,6 @@ function LuckySpinPage() {
   };
 
   const addRow = () => {
-    if (inputRows.length >= MAX_INPUT_TICKETS + 20) {
-      toast.error("Maksimum baris tercapai");
-      return;
-    }
     setInputRows((rows) => [
       ...rows,
       { id: crypto.randomUUID(), username: "", ticket: randomTicket(), bonus: "", status: "idle" },
