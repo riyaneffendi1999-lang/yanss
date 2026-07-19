@@ -318,20 +318,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   });
 
   const { effFrom, effTo } = useMemo(() => {
-    if (datePreset === "custom") return { effFrom: dateFrom, effTo: dateTo };
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const toIso = today.toISOString().slice(0, 10);
-    const shift = (days: number) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - days);
-      return d.toISOString().slice(0, 10);
-    };
-    if (datePreset === "today") return { effFrom: toIso, effTo: toIso };
-    if (datePreset === "yesterday") return { effFrom: shift(1), effTo: shift(1) };
-    if (datePreset === "7d") return { effFrom: shift(6), effTo: toIso };
-    return { effFrom: shift(29), effTo: toIso };
-  }, [datePreset, dateFrom, dateTo]);
+    const { from, to } = resolveDateRange(dateRange);
+    return { effFrom: from, effTo: to };
+  }, [dateRange]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
