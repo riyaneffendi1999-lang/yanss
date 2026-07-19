@@ -356,7 +356,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   };
 
   const GROUP_OPTIONS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
-
+  const STATUS_OPTIONS: DepositStatus[] =
+    config.kind === "pulsa" ? STATUS_OPTIONS_PULSA : STATUS_OPTIONS_BANK;
+  const OUTFLOW_STATUS: DepositStatus = config.kind === "pulsa" ? "Cuci Pulsa" : "Pindah dana";
 
   const totals = useMemo(() => {
     const scoped = accountId ? rows.filter((r) => r.account_id === accountId) : rows;
@@ -365,8 +367,21 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const pending = scoped.filter((r) => r.status === "Pending").length;
     const totalAmount = scoped.reduce((s, r) => s + Number(r.amount), 0);
     const unik = scoped.filter((r) => r.status === "Unik").length;
-    return { total, approved, pending, totalAmount, unik };
-  }, [rows, accountId]);
+    const sumBy = (st: DepositStatus) =>
+      scoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
+    const sumApproved = sumBy("Approved");
+    const sumPending = sumBy("Pending");
+    const sumUnik = sumBy("Unik");
+    const sumOut = sumBy(OUTFLOW_STATUS);
+    const sumFee = sumBy("Biaya admin");
+    const opening = Number(account?.opening_balance ?? 0);
+    const computedBalance = opening + sumApproved + sumUnik + sumPending - sumOut - sumFee;
+    return { total, approved, pending, totalAmount, unik, computedBalance, opening };
+  }, [rows, accountId, account, OUTFLOW_STATUS]);
+
+  // Pagination — 20 rows per page
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
 
   const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
