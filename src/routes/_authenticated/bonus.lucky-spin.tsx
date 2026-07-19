@@ -26,6 +26,7 @@ type InputRow = {
 type CompleteRow = {
   id: string;
   date: string;
+  iso_date: string;
   time: string;
   username: string;
   ticket: string;
