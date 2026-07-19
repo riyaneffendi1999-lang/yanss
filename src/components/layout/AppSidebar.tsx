@@ -96,7 +96,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) => pathname === url;
-  const groupActive = (g: Group) => g.items.some((i) => pathname.startsWith(i.url));
+  
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border">
@@ -139,7 +139,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{g.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <Collapsible defaultOpen={groupActive(g)} className="group/collapsible">
+                <Collapsible defaultOpen={false} className="group/collapsible">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton tooltip={g.label}>
