@@ -24,6 +24,10 @@ import {
   YAxis,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
