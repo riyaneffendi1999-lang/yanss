@@ -59,7 +59,9 @@ interface DepositRow {
   status: string;
   username: string;
   full_name: string;
+  group_tier?: string | null;
 }
+
 interface BankAccountRow {
   id: string;
   channel_name: string;
@@ -150,7 +152,7 @@ function DashboardPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deposits" as never)
-        .select("id,channel,iso_date,amount,status,username,full_name")
+        .select("id,channel,iso_date,amount,status,username,full_name,group_tier")
         .order("iso_date", { ascending: false })
         .limit(1000);
       if (error) throw error;
@@ -207,12 +209,12 @@ function DashboardPage() {
     return map;
   }, [inRange, bonusTotals]);
 
-  // 14-day trend: amount + count
+  // 7-day trend: amount + count
   const trend = useMemo(() => {
     const days: { day: string; amount: number; count: number }[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    for (let i = 13; i >= 0; i--) {
+    for (let i = 6; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const iso = d.toISOString().slice(0, 10);
@@ -223,11 +225,45 @@ function DashboardPage() {
     return days;
   }, [deposits]);
 
+  // Group totals aggregated across all deposits in range (VIP/High/Low/New Reg/Reguler)
+  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
+  const GROUP_COLORS: Record<string, string> = {
+    VIP: "rgb(251 191 36)",
+    High: "rgb(244 63 94)",
+    Low: "rgb(56 189 248)",
+    "New Registration": "rgb(52 211 153)",
+    Reguler: "rgb(167 139 250)",
+  };
+  const memberGroupTotals = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const g of MEMBER_GROUPS) map[g] = { total: 0, count: 0 };
+    for (const r of inRange as (DepositRow & { group_tier?: string | null })[]) {
+      const raw = String(r.group_tier ?? "").trim();
+      const key =
+        /vip/i.test(raw) ? "VIP" :
+        /high/i.test(raw) ? "High" :
+        /low/i.test(raw) ? "Low" :
+        /new/i.test(raw) ? "New Registration" :
+        "Reguler";
+      map[key].total += Number(r.amount || 0);
+      map[key].count += 1;
+    }
+    return map;
+  }, [inRange]);
+
+  const CHANNEL_COLORS: Record<string, string> = {
+    BCA: "rgb(56 189 248)", BNI: "rgb(251 146 60)", BRI: "rgb(59 130 246)", MANDIRI: "rgb(250 204 21)",
+    DANA: "rgb(96 165 250)", OVO: "rgb(167 139 250)", GOPAY: "rgb(52 211 153)", LINKAJA: "rgb(248 113 113)",
+    TELKOMSEL: "rgb(244 63 94)", XL: "rgb(45 212 191)",
+  };
   const channelStats = useMemo(() => {
     const map = new Map<string, number>();
     inRange.forEach((r) => map.set(r.channel, (map.get(r.channel) ?? 0) + Number(r.amount || 0)));
-    return Array.from(map.entries()).map(([channel, amount]) => ({ channel, amount }));
+    return Array.from(map.entries()).map(([channel, amount]) => ({
+      channel, amount, fill: CHANNEL_COLORS[String(channel).toUpperCase()] ?? "var(--color-primary)",
+    }));
   }, [inRange]);
+
 
   const topMembers = useMemo(() => {
     const map = new Map<string, { username: string; full_name: string; total: number; count: number }>();
@@ -296,13 +332,62 @@ function DashboardPage() {
         })}
       </div>
 
+      {/* Member Group Totals (aggregated across all deposits in range) */}
+      <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Total per Group Member</h3>
+            <p className="text-xs text-muted-foreground">Akumulasi seluruh channel deposit · periode terpilih</p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                <th className="py-2 pr-3 font-medium">Group</th>
+                <th className="py-2 px-3 font-medium text-right">Transaksi</th>
+                <th className="py-2 pl-3 font-medium text-right">Total Nominal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MEMBER_GROUPS.map((g) => {
+                const t = memberGroupTotals[g];
+                return (
+                  <tr key={g} className="border-b border-border/40 last:border-0">
+                    <td className="py-2.5 pr-3">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ background: GROUP_COLORS[g] }} />
+                        <span className="font-medium">{g}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">{t.count}</td>
+                    <td className="py-2.5 pl-3 text-right tabular-nums font-semibold">{fmt(t.total)}</td>
+                  </tr>
+                );
+              })}
+              <tr className="text-[13px]">
+                <td className="pt-3 pr-3 font-semibold">Total</td>
+                <td className="pt-3 px-3 text-right tabular-nums font-semibold">
+                  {MEMBER_GROUPS.reduce((s, g) => s + memberGroupTotals[g].count, 0)}
+                </td>
+                <td className="pt-3 pl-3 text-right tabular-nums font-semibold">
+                  {fmt(MEMBER_GROUPS.reduce((s, g) => s + memberGroupTotals[g].total, 0))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+
       {/* Charts */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Deposit Trend</h3>
-              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 14 hari terakhir</p>
+              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 7 hari terakhir</p>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Jumlah Deposit</span>
@@ -312,6 +397,17 @@ function DashboardPage() {
           <div className="h-72 w-full">
             <ResponsiveContainer>
               <LineChart data={trend} margin={{ top: 10, right: 12, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="lineAmount" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="rgb(139 92 246)" />
+                    <stop offset="50%" stopColor="rgb(59 130 246)" />
+                    <stop offset="100%" stopColor="rgb(236 72 153)" />
+                  </linearGradient>
+                  <linearGradient id="lineCount" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="rgb(16 185 129)" />
+                    <stop offset="100%" stopColor="rgb(250 204 21)" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
@@ -321,11 +417,12 @@ function DashboardPage() {
                   contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
                   formatter={(v: number, name) => name === "amount" ? fmt(v) : `${v} trx`}
                 />
-                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
-                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="rgb(52 211 153)"     strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
+                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="url(#lineAmount)" strokeWidth={3} dot={{ r: 3, fill: "rgb(59 130 246)" }} activeDot={{ r: 6 }} />
+                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="url(#lineCount)"  strokeWidth={3} dot={{ r: 3, fill: "rgb(16 185 129)" }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
+
         </div>
 
         <div className="glass-panel soft-shadow rounded-xl p-5">
@@ -376,7 +473,10 @@ function DashboardPage() {
                     contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
                     formatter={(v: number) => fmt(v)}
                   />
-                  <Bar dataKey="amount" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                    {channelStats.map((c) => (<Cell key={c.channel} fill={c.fill} />))}
+                  </Bar>
+
                 </BarChart>
               </ResponsiveContainer>
             )}
