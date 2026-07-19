@@ -28,7 +28,7 @@ function usernameToEmail(username: string) {
 export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const email = "riyan@maxslot88.local";
-  const password = "riyan99";
+  const password = "riyan123";
 
   // Find existing
   const { data: list, error: listErr } = await supabaseAdmin.auth.admin.listUsers({
