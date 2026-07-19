@@ -380,7 +380,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const sumFee = sumBy("Biaya admin");
     const opening = Number(account?.opening_balance ?? 0);
     const computedBalance = opening + sumApproved + sumUnik + sumPending - sumOut - sumFee;
-    return { total, approved, pending, totalAmount, unik, computedBalance, opening };
+    const outCount = scoped.filter((r) => r.status === OUTFLOW_STATUS).length;
+    const feeCount = scoped.filter((r) => r.status === "Biaya admin").length;
+    return { total, approved, pending, totalAmount, unik, computedBalance, opening, outCount, feeCount };
   }, [rows, accountId, account, OUTFLOW_STATUS]);
 
   // Pagination — 20 rows per page
