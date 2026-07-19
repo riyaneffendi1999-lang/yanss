@@ -317,16 +317,7 @@ function LuckySpinPage() {
                   className="h-9 w-56 bg-background/60 pl-9"
                 />
               </div>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as typeof period)}
-                className="h-9 rounded-md border border-border/60 bg-background/60 px-3 text-sm"
-              >
-                <option value="today">Today</option>
-                <option value="7d">7 hari</option>
-                <option value="30d">30 hari</option>
-                <option value="all">Semua</option>
-              </select>
+              <DateRangeSelect value={dateRange} onChange={(v) => { setDateRange(v); setPage(1); }} />
             </div>
           </div>
 
