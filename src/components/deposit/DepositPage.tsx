@@ -70,13 +70,21 @@ export type DepositStatus =
   | "Pending"
   | "Unik"
   | "Pindah dana"
+  | "Cuci Pulsa"
   | "Biaya admin";
 
-const STATUS_OPTIONS: DepositStatus[] = [
+const STATUS_OPTIONS_BANK: DepositStatus[] = [
   "Approved",
   "Pending",
   "Unik",
   "Pindah dana",
+  "Biaya admin",
+];
+const STATUS_OPTIONS_PULSA: DepositStatus[] = [
+  "Approved",
+  "Pending",
+  "Unik",
+  "Cuci Pulsa",
   "Biaya admin",
 ];
 
