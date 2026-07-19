@@ -92,6 +92,16 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) => pathname === url;
+  const { allowed, fullAccess } = useAllowedPages();
+  const canSee = (url: string) => isPageAllowed(url, allowed, fullAccess);
+
+  const visibleSingles = singles.filter((s) => canSee(s.url));
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((it) => canSee(it.url)) }))
+    .filter((g) => g.items.length > 0);
+  const visibleFooter = footerItems.filter((it) => canSee(it.url));
+
+
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
