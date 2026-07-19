@@ -147,7 +147,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {groups.map((g) => (
+        {visibleGroups.map((g) => (
           <SidebarGroup key={g.label} className="py-0.5">
             <SidebarGroupLabel
               className={cn(
