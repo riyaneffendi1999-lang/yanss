@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useForm } from "react-hook-form";
@@ -8,6 +8,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import {
   Crown,
+  Eye,
+  EyeOff,
   Loader2,
   Pencil,
   Plus,
@@ -254,9 +256,7 @@ function ManageAdminPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">#</TableHead>
                 <TableHead>Username</TableHead>
-                <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Login Terakhir</TableHead>
@@ -267,28 +267,31 @@ function ManageAdminPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </TableCell>
                 </TableRow>
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-destructive">
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-destructive">
                     {(error as Error)?.message ?? "Gagal memuat"}
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                     Tidak ada data
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((r, i) => (
+                rows.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                    <TableCell className="font-medium">{r.username}</TableCell>
-                    <TableCell>{r.full_name ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{r.username}</div>
+                      {r.full_name && (
+                        <div className="text-[11px] text-muted-foreground">{r.full_name}</div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {r.roles.length === 0 ? (
@@ -464,7 +467,7 @@ function CreateDialog({
             <Input placeholder="Nama tampilan" {...form.register("full_name")} />
           </Field>
           <Field label="Password" error={form.formState.errors.password?.message}>
-            <Input type="password" placeholder="min. 6 karakter" {...form.register("password")} />
+            <PasswordInput placeholder="min. 6 karakter" {...form.register("password")} />
           </Field>
           <Field label="Role" error={form.formState.errors.role?.message}>
             <Select
@@ -558,8 +561,7 @@ function EditDialog({
             label="Reset Password (opsional)"
             error={form.formState.errors.password?.message}
           >
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="Kosongkan bila tidak diubah"
               {...form.register("password")}
             />
@@ -596,3 +598,24 @@ function Field({
     </div>
   );
 }
+
+const PasswordInput = React.forwardRef<
+  HTMLInputElement,
+  React.InputHTMLAttributes<HTMLInputElement>
+>(function PasswordInput(props, ref) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input ref={ref} type={show ? "text" : "password"} className="pr-9" {...props} />
+      <button
+        type="button"
+        onClick={() => setShow((s) => !s)}
+        tabIndex={-1}
+        aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
+        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+      >
+        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+      </button>
+    </div>
+  );
+});
