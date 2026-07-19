@@ -271,7 +271,7 @@ function LuckySpinPage() {
                       <Input
                         value={row.bonus}
                         onChange={(e) => updateRow(row.id, { bonus: e.target.value.replace(/[^\d.,]/g, "") })}
-                        placeholder="Nominal, Enter untuk simpan"
+                        placeholder="Nominal"
                         className="h-9 bg-background/40"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") processRow(row);
