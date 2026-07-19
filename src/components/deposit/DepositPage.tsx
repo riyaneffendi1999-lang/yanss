@@ -325,6 +325,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
+      // Scope every row to the selected "Atas Nama" (rekening).
+      if (accountId && r.account_id !== accountId) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (effFrom && r.iso_date < effFrom) return false;
       if (effTo && r.iso_date > effTo) return false;
@@ -336,7 +338,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       )) return false;
       return true;
     });
-  }, [rows, statusFilter, search, effFrom, effTo]);
+  }, [rows, statusFilter, search, effFrom, effTo, accountId]);
 
   const resetFilters = () => {
     setDateRange({ preset: "today", from: "", to: "" });
