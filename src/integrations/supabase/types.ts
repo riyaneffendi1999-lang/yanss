@@ -50,6 +50,69 @@ export type Database = {
         }
         Relationships: []
       }
+      deposits: {
+        Row: {
+          account_id: string | null
+          admin: string | null
+          amount: number
+          channel: string
+          created_at: string
+          created_by: string | null
+          date_str: string
+          full_name: string
+          group_tier: string | null
+          id: string
+          iso_date: string
+          sender_account: string | null
+          sender_name: string | null
+          status: string
+          ticket: string
+          time_str: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          account_id?: string | null
+          admin?: string | null
+          amount?: number
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          date_str: string
+          full_name: string
+          group_tier?: string | null
+          id?: string
+          iso_date: string
+          sender_account?: string | null
+          sender_name?: string | null
+          status?: string
+          ticket: string
+          time_str: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          account_id?: string | null
+          admin?: string | null
+          amount?: number
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          date_str?: string
+          full_name?: string
+          group_tier?: string | null
+          id?: string
+          iso_date?: string
+          sender_account?: string | null
+          sender_name?: string | null
+          status?: string
+          ticket?: string
+          time_str?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
