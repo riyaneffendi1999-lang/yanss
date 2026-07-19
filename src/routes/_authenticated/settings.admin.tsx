@@ -467,7 +467,7 @@ function CreateDialog({
             <Input placeholder="Nama tampilan" {...form.register("full_name")} />
           </Field>
           <Field label="Password" error={form.formState.errors.password?.message}>
-            <Input type="password" placeholder="min. 6 karakter" {...form.register("password")} />
+            <PasswordInput placeholder="min. 6 karakter" {...form.register("password")} />
           </Field>
           <Field label="Role" error={form.formState.errors.role?.message}>
             <Select
