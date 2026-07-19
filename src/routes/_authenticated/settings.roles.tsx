@@ -48,7 +48,7 @@ const permissions: Perm[] = [
 const defaults: Record<RoleKey, string[]> = {
   head: permissions.map((p) => p.key),
   supervisor: permissions.filter((p) => !["role.manage", "admin.manage", "settings.security"].includes(p.key)).map((p) => p.key),
-  ast_spv: ["dashboard.view", "deposit.view", "deposit.create", "deposit.approve", "deposit.reject", "deposit.export", "bonus.view", "bonus.inject", "bank.view", "bank.toggle", "admin.view", "report.view", "report.export"],
+  ast_spv: ["dashboard.view", "deposit.view", "deposit.create", "deposit.approve", "deposit.reject", "deposit.export", "bonus.view", "bonus.inject", "bank.view", "bank.toggle", "admin.view", "report.view"],
   staff: ["dashboard.view", "deposit.view", "deposit.create", "bonus.view", "bank.view", "report.view"],
 };
 
