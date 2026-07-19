@@ -15,8 +15,7 @@ import {
   Sparkles,
   Receipt,
   Clock,
-  CheckCircle2,
-  XCircle,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
