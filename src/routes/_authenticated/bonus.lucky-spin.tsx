@@ -35,7 +35,8 @@ type CompleteRow = {
 };
 
 const MAX_INPUT_TICKETS = 10;
-const PAGE_SIZE = 10;
+const INPUT_PAGE_SIZE = 20;
+const COMPLETE_PAGE_SIZE = 10;
 
 function randomTicket() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -83,6 +84,7 @@ function LuckySpinPage() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
+  const [inputPage, setInputPage] = useState(1);
 
   useEffect(() => {
     try { window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows)); } catch { /* ignore */ }
@@ -102,10 +104,6 @@ function LuckySpinPage() {
   };
 
   const addRow = () => {
-    if (inputRows.length >= MAX_INPUT_TICKETS + 20) {
-      toast.error("Maksimum baris tercapai");
-      return;
-    }
     setInputRows((rows) => [
       ...rows,
       { id: crypto.randomUUID(), username: "", ticket: randomTicket(), bonus: "", status: "idle" },
@@ -181,9 +179,13 @@ function LuckySpinPage() {
     });
   }, [completeRows, search, effFrom, effTo]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredComplete.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredComplete.length / COMPLETE_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedComplete = filteredComplete.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pagedComplete = filteredComplete.slice((currentPage - 1) * COMPLETE_PAGE_SIZE, currentPage * COMPLETE_PAGE_SIZE);
+
+  const inputTotalPages = Math.max(1, Math.ceil(inputRows.length / INPUT_PAGE_SIZE));
+  const currentInputPage = Math.min(inputPage, inputTotalPages);
+  const pagedInput = inputRows.slice((currentInputPage - 1) * INPUT_PAGE_SIZE, currentInputPage * INPUT_PAGE_SIZE);
 
   const totalMember = new Set(completeRows.map((r) => r.username)).size;
   const totalBonus = completeRows.reduce((s, r) => s + r.bonus, 0);
@@ -247,7 +249,7 @@ function LuckySpinPage() {
                 </tr>
               </thead>
               <tbody>
-                {inputRows.map((row) => (
+                {pagedInput.map((row) => (
                   <tr key={row.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
                     <td className="px-5 py-2.5">
                       <Input
@@ -306,14 +308,17 @@ function LuckySpinPage() {
             </table>
           </div>
 
-          <div className="flex items-center justify-between border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
             <span>
               {filledCount} terisi dari {inputRows.length} baris
             </span>
-            <Button size="sm" variant="ghost" onClick={addRow} className="h-7 gap-1 text-xs">
-              <Plus className="size-3.5" />
-              Baris baru
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="ghost" onClick={addRow} className="h-7 gap-1 text-xs">
+                <Plus className="size-3.5" />
+                Baris baru
+              </Button>
+              <Pagination page={currentInputPage} totalPages={inputTotalPages} onChange={setInputPage} />
+            </div>
           </div>
         </motion.section>
 
@@ -413,8 +418,8 @@ function LuckySpinPage() {
           {/* Pagination */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
             <span>
-              Showing {filteredComplete.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1} to{" "}
-              {Math.min(currentPage * PAGE_SIZE, filteredComplete.length)} of{" "}
+              Showing {filteredComplete.length === 0 ? 0 : (currentPage - 1) * COMPLETE_PAGE_SIZE + 1} to{" "}
+              {Math.min(currentPage * COMPLETE_PAGE_SIZE, filteredComplete.length)} of{" "}
               {filteredComplete.length} entries
             </span>
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
