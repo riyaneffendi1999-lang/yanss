@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowUpRight,
@@ -12,14 +12,12 @@ import {
   Wallet,
   Smartphone,
   Gift,
-  Settings,
-  Sparkles,
-  ChevronRight,
+  Activity as ActivityIcon,
 } from "lucide-react";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -66,6 +64,25 @@ interface BankAccountRow {
   balance: number;
   online: boolean;
 }
+interface ActivityRow {
+  id: string;
+  created_at: string;
+  action: string;
+  entity: string | null;
+  actor_name: string | null;
+  meta: Record<string, unknown> | null;
+}
+
+const BANK_CHANNELS = ["BCA", "BNI", "BRI", "MANDIRI"];
+const EMONEY_CHANNELS = ["DANA", "OVO", "GOPAY", "LINKAJA"];
+const PULSA_CHANNELS = ["TELKOMSEL", "XL"];
+
+const GROUP_META = [
+  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30 text-sky-300",           channels: BANK_CHANNELS },
+  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30 text-violet-300", channels: EMONEY_CHANNELS },
+  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30 text-emerald-300", channels: PULSA_CHANNELS },
+  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30 text-amber-300",   channels: [] as string[] },
+];
 
 function fmt(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
@@ -76,24 +93,43 @@ function statusBadge(s: string) {
   return <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">{s}</Badge>;
 }
 
-const QUICK_LINKS: Array<{
-  label: string;
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  tone: string;
-  desc: string;
-}> = [
-  { label: "Deposit Bank",     to: "/deposit/bank/bca",       icon: Landmark,  tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30 text-sky-300",           desc: "BCA · BNI · BRI · Mandiri" },
-  { label: "Deposit E-money",  to: "/deposit/emoney/dana",    icon: Wallet,    tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30 text-violet-300", desc: "DANA · OVO · GoPay · LinkAja" },
-  { label: "Deposit Pulsa",    to: "/deposit/pulsa/telkomsel",icon: Smartphone,tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30 text-emerald-300", desc: "Telkomsel · XL" },
-  { label: "Lucky Spin",       to: "/bonus/lucky-spin",       icon: Sparkles,  tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30 text-amber-300",   desc: "Bonus adjustment" },
-  { label: "Bonus Adjustment", to: "/bonus/kamis-ceria",      icon: Gift,      tone: "from-rose-500/20 to-rose-500/0 ring-rose-500/30 text-rose-300",       desc: "Kamis Ceria · Gebyar" },
-  { label: "Manage Bank",      to: "/settings/bank",          icon: Settings,  tone: "from-primary/20 to-primary/0 ring-primary/30 text-primary",           desc: "Rekening & saldo" },
-];
+// Read locally-persisted bonus totals (Lucky Spin, etc.)
+function useBonusTotals() {
+  const [state, setState] = useState({ total: 0, count: 0 });
+  useEffect(() => {
+    const compute = () => {
+      let total = 0;
+      let count = 0;
+      const keys = ["lucky-spin:complete", "kamis-ceria:complete", "gebyar-turnover:complete"];
+      for (const k of keys) {
+        try {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          const arr = JSON.parse(raw);
+          if (Array.isArray(arr)) {
+            for (const r of arr) {
+              const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
+              if (!Number.isNaN(v)) total += v;
+              count += 1;
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      setState({ total, count });
+    };
+    compute();
+    const onStorage = () => compute();
+    window.addEventListener("storage", onStorage);
+    const t = setInterval(compute, 4000);
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(t); };
+  }, []);
+  return state;
+}
 
 function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const { from: effFrom, to: effTo } = useMemo(() => resolveDateRange(dateRange), [dateRange]);
+  const bonusTotals = useBonusTotals();
 
   const { data: deposits = [] } = useQuery<DepositRow[]>({
     queryKey: ["dashboard-deposits"],
@@ -102,7 +138,7 @@ function DashboardPage() {
         .from("deposits" as never)
         .select("id,channel,iso_date,amount,status,username,full_name")
         .order("iso_date", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return (data ?? []) as unknown as DepositRow[];
     },
@@ -119,15 +155,47 @@ function DashboardPage() {
     },
   });
 
+  const { data: activity = [] } = useQuery<ActivityRow[]>({
+    queryKey: ["dashboard-activity"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("activity_logs" as never)
+        .select("id,created_at,action,entity,actor_name,meta")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return (data ?? []) as unknown as ActivityRow[];
+    },
+  });
+
   const inRange = deposits.filter((d) => (!effFrom || d.iso_date >= effFrom) && (!effTo || d.iso_date <= effTo));
   const totalAmount = inRange.reduce((s, d) => s + Number(d.amount || 0), 0);
   const approvedCount = inRange.filter((d) => d.status === "Approved").length;
   const pendingCount = inRange.filter((d) => d.status === "Pending").length;
   const uniqueMembers = new Set(inRange.map((d) => d.username)).size;
 
-  // 14-day trend series
+  // Group totals (Bank / E-money / Pulsa / Bonus)
+  const groupTotals = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const g of GROUP_META) map[g.key] = { total: 0, count: 0 };
+    for (const r of inRange) {
+      const ch = String(r.channel || "").toUpperCase();
+      let key: string | null = null;
+      if (BANK_CHANNELS.includes(ch)) key = "bank";
+      else if (EMONEY_CHANNELS.includes(ch)) key = "emoney";
+      else if (PULSA_CHANNELS.includes(ch)) key = "pulsa";
+      if (key) {
+        map[key].total += Number(r.amount || 0);
+        map[key].count += 1;
+      }
+    }
+    map.bonus = { total: bonusTotals.total, count: bonusTotals.count };
+    return map;
+  }, [inRange, bonusTotals]);
+
+  // 14-day trend: amount + count
   const trend = useMemo(() => {
-    const days: { day: string; deposit: number; count: number }[] = [];
+    const days: { day: string; amount: number; count: number }[] = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     for (let i = 13; i >= 0; i--) {
@@ -136,19 +204,17 @@ function DashboardPage() {
       const iso = d.toISOString().slice(0, 10);
       const day = deposits.filter((r) => r.iso_date === iso);
       const sum = day.reduce((s, r) => s + Number(r.amount || 0), 0);
-      days.push({ day: `${d.getDate()}/${d.getMonth() + 1}`, deposit: sum, count: day.length });
+      days.push({ day: `${d.getDate()}/${d.getMonth() + 1}`, amount: sum, count: day.length });
     }
     return days;
   }, [deposits]);
 
-  // Channel breakdown
   const channelStats = useMemo(() => {
     const map = new Map<string, number>();
     inRange.forEach((r) => map.set(r.channel, (map.get(r.channel) ?? 0) + Number(r.amount || 0)));
     return Array.from(map.entries()).map(([channel, amount]) => ({ channel, amount }));
   }, [inRange]);
 
-  // Top members
   const topMembers = useMemo(() => {
     const map = new Map<string, { username: string; full_name: string; total: number; count: number }>();
     inRange.forEach((r) => {
@@ -160,7 +226,6 @@ function DashboardPage() {
     return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 5);
   }, [inRange]);
 
-  const latestTx = inRange.slice(0, 8);
   const bankStatus = banks.slice(0, 6);
   const totalBalance = banks.filter((b) => b.online).reduce((s, b) => s + Number(b.balance || 0), 0);
 
@@ -187,26 +252,34 @@ function DashboardPage() {
         <StatCard label="Member Unik"       value={String(uniqueMembers)}     delta={`Saldo bank ${fmt(totalBalance)}`} trend="up" icon={Users}         index={3} />
       </div>
 
-      {/* Quick access grid */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {QUICK_LINKS.map((q) => (
-          <Link
-            key={q.to}
-            to={q.to}
-            preload="intent"
-            className={cn(
-              "group relative overflow-hidden rounded-xl bg-gradient-to-br p-4 ring-1 transition hover:-translate-y-0.5 hover:shadow-lg",
-              q.tone,
-            )}
-          >
-            <div className="flex items-center justify-between">
-              <q.icon className="h-5 w-5" />
-              <ChevronRight className="h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
-            </div>
-            <div className="mt-3 text-sm font-semibold text-foreground">{q.label}</div>
-            <div className="text-[11px] text-muted-foreground">{q.desc}</div>
-          </Link>
-        ))}
+      {/* Group totals: Bank / E-money / Pulsa / Bonus */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {GROUP_META.map((g) => {
+          const t = groupTotals[g.key];
+          return (
+            <Link
+              key={g.key}
+              to={g.to}
+              preload="intent"
+              className={cn(
+                "group relative overflow-hidden rounded-xl bg-gradient-to-br p-5 ring-1 transition hover:-translate-y-0.5 hover:shadow-lg",
+                g.tone,
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+                  <g.icon className="h-4 w-4" /> {g.label}
+                </div>
+                <ArrowUpRight className="h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
+              </div>
+              <div className="mt-3 text-2xl font-semibold text-foreground">{fmt(t.total)}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {t.count} {g.key === "bonus" ? "klaim bonus" : "transaksi"}
+                {g.channels.length > 0 && <span className="ml-1">· {g.channels.join(" · ")}</span>}
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {/* Charts */}
@@ -215,34 +288,28 @@ function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Deposit Trend</h3>
-              <p className="text-xs text-muted-foreground">14 hari terakhir</p>
+              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 14 hari terakhir</p>
             </div>
-            <Badge variant="secondary" className="text-[10px]">Auto Refresh</Badge>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Jumlah Deposit</span>
+              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Total Transaksi</span>
+            </div>
           </div>
           <div className="h-72 w-full">
             <ResponsiveContainer>
-              <AreaChart data={trend} margin={{ top: 10, right: 12, bottom: 0, left: 0 }}>
-                <defs>
-                  <linearGradient id="gDep" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity={0.55} />
-                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
+              <LineChart data={trend} margin={{ top: 10, right: 12, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
+                <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
                   tickFormatter={(v) => `${(Number(v) / 1_000_000).toFixed(1)}jt`} />
+                <YAxis yAxisId="right" orientation="right" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{
-                    background: "var(--color-popover)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                  formatter={(v: number) => fmt(v)}
+                  contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                  formatter={(v: number, name) => name === "amount" ? fmt(v) : `${v} trx`}
                 />
-                <Area type="monotone" dataKey="deposit" stroke="var(--color-primary)" fill="url(#gDep)" strokeWidth={2} />
-              </AreaChart>
+                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
+                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="rgb(52 211 153)"     strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -333,41 +400,46 @@ function DashboardPage() {
         </div>
       </div>
 
-      {/* Latest transactions */}
+      {/* Recent Activity (replaces Latest Transactions) */}
       <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold">Latest Transactions</h3>
-            <p className="text-xs text-muted-foreground">Update realtime dari semua channel</p>
+            <h3 className="text-sm font-semibold">Recent Activity</h3>
+            <p className="text-xs text-muted-foreground">Aktivitas admin terbaru dari seluruh modul</p>
           </div>
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/deposit/bank/bca">Lihat semua</Link>
+            <Link to="/settings/admin">Kelola admin</Link>
           </Button>
         </div>
         <Table>
           <TableHeader>
             <TableRow className="border-border/60">
-              <TableHead>Tanggal</TableHead>
-              <TableHead>Member</TableHead>
-              <TableHead>Channel</TableHead>
-              <TableHead className="text-right">Amount</TableHead>
-              <TableHead className="text-right">Status</TableHead>
+              <TableHead>Waktu</TableHead>
+              <TableHead>Admin</TableHead>
+              <TableHead>Aksi</TableHead>
+              <TableHead>Modul</TableHead>
+              <TableHead className="text-right">Detail</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {latestTx.length === 0 ? (
+            {activity.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-8 text-center text-xs text-muted-foreground">
-                  Belum ada transaksi pada periode ini
+                  <ActivityIcon className="mx-auto mb-2 h-4 w-4 opacity-60" />
+                  Belum ada aktivitas tercatat
                 </TableCell>
               </TableRow>
-            ) : latestTx.map((t) => (
-              <TableRow key={t.id} className="border-border/60">
-                <TableCell className="text-xs text-muted-foreground">{t.iso_date}</TableCell>
-                <TableCell className="font-medium">{t.username}</TableCell>
-                <TableCell>{t.channel}</TableCell>
-                <TableCell className="text-right font-medium">{fmt(Number(t.amount))}</TableCell>
-                <TableCell className="text-right">{statusBadge(t.status)}</TableCell>
+            ) : activity.map((a) => (
+              <TableRow key={a.id} className="border-border/60">
+                <TableCell className="text-xs text-muted-foreground">
+                  {new Date(a.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                </TableCell>
+                <TableCell className="font-medium">{a.actor_name ?? "system"}</TableCell>
+                <TableCell><Badge variant="secondary" className="text-[10px]">{a.action}</Badge></TableCell>
+                <TableCell className="text-xs">{a.entity ?? "—"}</TableCell>
+                <TableCell className="text-right text-[11px] text-muted-foreground truncate max-w-[280px]">
+                  {a.meta ? JSON.stringify(a.meta).slice(0, 80) : "—"}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
