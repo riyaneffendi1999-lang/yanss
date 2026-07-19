@@ -795,6 +795,88 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Transaksi</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Tanggal</Label>
+              <Input type="date" value={form.iso_date}
+                onChange={(e) => setForm((f) => ({ ...f, iso_date: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Jam</Label>
+              <Input type="time" value={form.time_str}
+                onChange={(e) => setForm((f) => ({ ...f, time_str: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tiket</Label>
+              <Input value={form.ticket}
+                onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Username</Label>
+              <Input value={form.username}
+                onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nama Lengkap</Label>
+              <Input value={form.full_name}
+                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Group</Label>
+              <Input value={form.group_tier}
+                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Rekening</Label>
+              <Select value={form.account_id} onValueChange={(v) => setForm((f) => ({ ...f, account_id: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih rekening…" /></SelectTrigger>
+                <SelectContent>
+                  {bankAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.account_name} — {a.account_number}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm((f) => ({ ...f, status: v as DepositStatus }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {STATUS_OPTIONS.map((s) => (
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Jumlah Deposit (Rp)</Label>
+              <Input inputMode="numeric" value={form.amount}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+            </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label>Keterangan</Label>
+              <Input value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Batal</Button>
+            <Button onClick={onEditSubmit} disabled={updateMut.isPending}>
+              {updateMut.isPending ? "Menyimpan..." : "Simpan Perubahan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
