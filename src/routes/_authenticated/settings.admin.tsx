@@ -120,8 +120,7 @@ function ManageAdminPage() {
       const q = search.toLowerCase();
       return (
         r.username.toLowerCase().includes(q) ||
-        (r.full_name ?? "").toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q)
+        (r.full_name ?? "").toLowerCase().includes(q)
       );
     });
   }, [data, search, roleFilter]);
@@ -463,9 +462,7 @@ function EditDialog({
           <DialogTitle className="flex items-center gap-2">
             <Pencil className="h-4 w-4" /> Ubah Admin
           </DialogTitle>
-          <DialogDescription>
-            {row?.username} · {row?.email}
-          </DialogDescription>
+          <DialogDescription>{row?.username}</DialogDescription>
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <Field label="Nama Lengkap" error={form.formState.errors.full_name?.message}>

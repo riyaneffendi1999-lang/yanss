@@ -45,7 +45,9 @@ function ProfilePage() {
               <h2 className="truncate text-lg font-semibold">
                 {data?.profile?.full_name ?? "—"}
               </h2>
-              <p className="truncate text-sm text-muted-foreground">{data?.user?.email}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                @{(data?.user?.email ?? "").split("@")[0] || "—"}
+              </p>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {data?.roles.length ? (
                   data.roles.map((r) => (
