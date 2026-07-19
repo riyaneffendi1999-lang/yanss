@@ -120,8 +120,7 @@ function ManageAdminPage() {
       const q = search.toLowerCase();
       return (
         r.username.toLowerCase().includes(q) ||
-        (r.full_name ?? "").toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q)
+        (r.full_name ?? "").toLowerCase().includes(q)
       );
     });
   }, [data, search, roleFilter]);
