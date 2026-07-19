@@ -339,7 +339,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       // Scope every row to the selected "Atas Nama" (rekening).
-      if (accountId && r.account_id !== accountId) return false;
+      // Scope to selected account, but also include legacy rows without an account assignment
+      if (accountId && r.account_id && r.account_id !== accountId) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (effFrom && r.iso_date < effFrom) return false;
       if (effTo && r.iso_date > effTo) return false;
@@ -365,7 +366,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const OUTFLOW_STATUS: DepositStatus = config.kind === "pulsa" ? "Cuci Pulsa" : "Pindah dana";
 
   const totals = useMemo(() => {
-    const scoped = accountId ? rows.filter((r) => r.account_id === accountId) : rows;
+    const scoped = accountId ? rows.filter((r) => !r.account_id || r.account_id === accountId) : rows;
     const total = scoped.length;
     const approved = scoped.filter((r) => r.status === "Approved").length;
     const pending = scoped.filter((r) => r.status === "Pending").length;
