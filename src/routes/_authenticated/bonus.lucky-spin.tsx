@@ -183,9 +183,13 @@ function LuckySpinPage() {
     });
   }, [completeRows, search, effFrom, effTo]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredComplete.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredComplete.length / COMPLETE_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedComplete = filteredComplete.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pagedComplete = filteredComplete.slice((currentPage - 1) * COMPLETE_PAGE_SIZE, currentPage * COMPLETE_PAGE_SIZE);
+
+  const inputTotalPages = Math.max(1, Math.ceil(inputRows.length / INPUT_PAGE_SIZE));
+  const currentInputPage = Math.min(inputPage, inputTotalPages);
+  const pagedInput = inputRows.slice((currentInputPage - 1) * INPUT_PAGE_SIZE, currentInputPage * INPUT_PAGE_SIZE);
 
   const totalMember = new Set(completeRows.map((r) => r.username)).size;
   const totalBonus = completeRows.reduce((s, r) => s + r.bonus, 0);
