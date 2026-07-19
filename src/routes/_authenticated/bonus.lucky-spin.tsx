@@ -70,7 +70,9 @@ function loadLS<T>(key: string, fallback: T): T {
   try {
     const raw = window.localStorage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch { return fallback; }
+  } catch {
+    return fallback;
+  }
 }
 
 function LuckySpinPage() {
@@ -78,19 +80,25 @@ function LuckySpinPage() {
     loadLS<InputRow[]>(LS_INPUT_KEY, makeEmptyRows(MAX_INPUT_TICKETS)),
   );
   const [pasteValue, setPasteValue] = useState("");
-  const [completeRows, setCompleteRows] = useState<CompleteRow[]>(() =>
-    loadLS<CompleteRow[]>(LS_COMPLETE_KEY, []),
-  );
+  const [completeRows, setCompleteRows] = useState<CompleteRow[]>(() => loadLS<CompleteRow[]>(LS_COMPLETE_KEY, []));
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
   const [inputPage, setInputPage] = useState(1);
 
   useEffect(() => {
-    try { window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows)); } catch { /* ignore */ }
+    try {
+      window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows));
+    } catch {
+      /* ignore */
+    }
   }, [inputRows]);
   useEffect(() => {
-    try { window.localStorage.setItem(LS_COMPLETE_KEY, JSON.stringify(completeRows)); } catch { /* ignore */ }
+    try {
+      window.localStorage.setItem(LS_COMPLETE_KEY, JSON.stringify(completeRows));
+    } catch {
+      /* ignore */
+    }
   }, [completeRows]);
 
   const filledCount = inputRows.filter((r) => r.ticket && r.username).length;
@@ -181,7 +189,10 @@ function LuckySpinPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredComplete.length / COMPLETE_PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pagedComplete = filteredComplete.slice((currentPage - 1) * COMPLETE_PAGE_SIZE, currentPage * COMPLETE_PAGE_SIZE);
+  const pagedComplete = filteredComplete.slice(
+    (currentPage - 1) * COMPLETE_PAGE_SIZE,
+    currentPage * COMPLETE_PAGE_SIZE,
+  );
 
   const inputTotalPages = Math.max(1, Math.ceil(inputRows.length / INPUT_PAGE_SIZE));
   const currentInputPage = Math.min(inputPage, inputTotalPages);
@@ -193,19 +204,13 @@ function LuckySpinPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4"
-      >
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4">
         <div className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-amber-500/20 to-primary/20 ring-1 ring-amber-500/30">
           <Sparkles className="size-6 text-amber-400" />
         </div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Lucky Spin</h1>
-          <p className="text-sm text-muted-foreground">
-            Data kiri = input baru • Data kanan = sudah Complete
-          </p>
+          <p className="text-sm text-muted-foreground">Data kiri = input baru • Data kanan = sudah Complete</p>
         </div>
       </motion.div>
 
@@ -223,7 +228,7 @@ function LuckySpinPage() {
                 <Textarea
                   value={pasteValue}
                   onChange={(e) => setPasteValue(e.target.value)}
-                  placeholder="Ketik/paste tiket... (min 9 karakter, pisahkan dengan spasi/baris)"
+                  placeholder="paste di sini"
                   className="h-10 min-h-10 w-64 resize-none rounded-lg border-border/60 bg-background/60 py-2 pr-14 text-sm"
                 />
                 <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
@@ -260,16 +265,12 @@ function LuckySpinPage() {
                       />
                     </td>
                     <td className="px-3 py-2.5">
-                      <span className="font-mono text-xs tracking-wider text-foreground/90">
-                        {row.ticket}
-                      </span>
+                      <span className="font-mono text-xs tracking-wider text-foreground/90">{row.ticket}</span>
                     </td>
                     <td className="px-3 py-2.5">
                       <Input
                         value={row.bonus}
-                        onChange={(e) =>
-                          updateRow(row.id, { bonus: e.target.value.replace(/[^\d.,]/g, "") })
-                        }
+                        onChange={(e) => updateRow(row.id, { bonus: e.target.value.replace(/[^\d.,]/g, "") })}
                         placeholder="Nominal, Enter untuk simpan"
                         className="h-9 bg-background/40"
                         onKeyDown={(e) => {
@@ -340,7 +341,13 @@ function LuckySpinPage() {
                   className="h-9 w-56 bg-background/60 pl-9"
                 />
               </div>
-              <DateRangeSelect value={dateRange} onChange={(v) => { setDateRange(v); setPage(1); }} />
+              <DateRangeSelect
+                value={dateRange}
+                onChange={(v) => {
+                  setDateRange(v);
+                  setPage(1);
+                }}
+              />
             </div>
           </div>
 
@@ -386,9 +393,7 @@ function LuckySpinPage() {
                       <td className="px-3 py-3 text-muted-foreground">{r.time}</td>
                       <td className="px-3 py-3 font-medium">{r.username}</td>
                       <td className="px-3 py-3 font-mono text-xs">{r.ticket}</td>
-                      <td className="px-3 py-3 text-emerald-300">
-                        Rp {r.bonus.toLocaleString("id-ID")}
-                      </td>
+                      <td className="px-3 py-3 text-emerald-300">Rp {r.bonus.toLocaleString("id-ID")}</td>
                       <td className="px-3 py-3">
                         <StatusPill status="complete" />
                       </td>
@@ -397,9 +402,7 @@ function LuckySpinPage() {
                           size="icon"
                           variant="ghost"
                           className="size-8 text-destructive hover:bg-destructive/10"
-                          onClick={() =>
-                            setCompleteRows((rows) => rows.filter((x) => x.id !== r.id))
-                          }
+                          onClick={() => setCompleteRows((rows) => rows.filter((x) => x.id !== r.id))}
                         >
                           <Trash2 className="size-4" />
                         </Button>
@@ -415,8 +418,7 @@ function LuckySpinPage() {
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
             <span>
               Showing {filteredComplete.length === 0 ? 0 : (currentPage - 1) * COMPLETE_PAGE_SIZE + 1} to{" "}
-              {Math.min(currentPage * COMPLETE_PAGE_SIZE, filteredComplete.length)} of{" "}
-              {filteredComplete.length} entries
+              {Math.min(currentPage * COMPLETE_PAGE_SIZE, filteredComplete.length)} of {filteredComplete.length} entries
             </span>
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
           </div>
@@ -440,24 +442,9 @@ function StatusPill({ status }: { status: InputRow["status"] }) {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  suffix,
-  accent,
-}: {
-  label: string;
-  value: string;
-  suffix?: string;
-  accent: string;
-}) {
+function StatCard({ label, value, suffix, accent }: { label: string; value: string; suffix?: string; accent: string }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl bg-gradient-to-br p-4 ring-1",
-        accent,
-      )}
-    >
+    <div className={cn("rounded-xl bg-gradient-to-br p-4 ring-1", accent)}>
       <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{label}</div>
       <div className="mt-1 flex items-baseline gap-2">
         <span className="text-2xl font-semibold text-foreground">{value}</span>
@@ -486,13 +473,7 @@ function Pagination({
 
   return (
     <div className="flex items-center gap-1">
-      <Button
-        size="icon"
-        variant="ghost"
-        className="size-7"
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-      >
+      <Button size="icon" variant="ghost" className="size-7" disabled={page <= 1} onClick={() => onChange(page - 1)}>
         <ChevronLeft className="size-4" />
       </Button>
       {pages.map((p) => (
