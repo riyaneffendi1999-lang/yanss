@@ -246,7 +246,7 @@ function DashboardPage() {
         /high/i.test(raw) ? "High" :
         /low/i.test(raw) ? "Low" :
         /new/i.test(raw) ? "New Registration" :
-        "Reguler";
+        "Medium";
       map[key].total += Number(r.amount || 0);
       map[key].count += 1;
     }
