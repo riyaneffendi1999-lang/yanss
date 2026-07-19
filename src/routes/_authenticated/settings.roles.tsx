@@ -41,7 +41,6 @@ const permissions: Perm[] = [
   { group: "Admin", key: "admin.manage", label: "Tambah/Ubah/Hapus Admin" },
   { group: "Role", key: "role.manage", label: "Kelola Role & Akses" },
   { group: "Report", key: "report.view", label: "Lihat Report" },
-  { group: "Report", key: "report.export", label: "Export Report" },
   { group: "Settings", key: "settings.general", label: "Settings Umum" },
   { group: "Settings", key: "settings.security", label: "Settings Keamanan" },
 ];
