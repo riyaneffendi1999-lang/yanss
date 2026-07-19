@@ -255,6 +255,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const [search, setSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const nowDate = () => new Date().toISOString().slice(0, 10);
   const nowTime = () => new Date().toTimeString().slice(0, 5);
@@ -612,34 +614,23 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   <td className="px-4 py-3 text-muted-foreground">{r.group_tier}</td>
                   <td className="px-4 py-3 font-semibold">{rp(Number(r.amount))}</td>
                   <td className="px-4 py-3">
-                    <Select value={r.status} onValueChange={(v) => setStatus(r.id, v as DepositStatus)}>
-                      <SelectTrigger className="h-7 w-[130px] border-border/60 bg-transparent px-2 py-0">
-                        <StatusPill status={r.status} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((s) => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <StatusPill status={r.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">{r.admin ?? "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      {r.status !== "Approved" && (
-                        <button onClick={() => setStatus(r.id, "Approved")} title="Approve"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-emerald-400">
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      {r.status !== "Pending" && (
-                        <button onClick={() => setStatus(r.id, "Pending")} title="Pending"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-amber-400">
-                          <XCircle className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                      <button onClick={() => onDelete(r.id)} title="Hapus"
-                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-rose-400">
+                      <button
+                        onClick={() => openEdit(r)}
+                        title="Edit"
+                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-sky-400"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(r.id)}
+                        title="Hapus"
+                        className="rounded p-1.5 text-muted-foreground hover:bg-secondary hover:text-rose-400"
+                      >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
