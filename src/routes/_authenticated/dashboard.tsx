@@ -104,7 +104,7 @@ function useBonusTotals() {
     const compute = () => {
       let total = 0;
       let count = 0;
-      const keys = ["lucky-spin:complete", "kamis-ceria:complete", "gebyar-turnover:complete"];
+      const keys = ["lucky-spin/complete-rows", "lucky-spin:complete", "kamis-ceria:complete", "gebyar-turnover:complete"];
       for (const k of keys) {
         try {
           const raw = localStorage.getItem(k);
