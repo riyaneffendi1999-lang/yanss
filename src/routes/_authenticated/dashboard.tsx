@@ -59,7 +59,9 @@ interface DepositRow {
   status: string;
   username: string;
   full_name: string;
+  group_tier?: string | null;
 }
+
 interface BankAccountRow {
   id: string;
   channel_name: string;
