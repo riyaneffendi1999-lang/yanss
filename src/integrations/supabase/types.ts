@@ -50,6 +50,51 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          account_name: string
+          account_number: string
+          balance: number
+          channel_kind: string
+          channel_name: string
+          code: string | null
+          created_at: string
+          daily_limit: number
+          id: string
+          online: boolean
+          opening_balance: number
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          account_number: string
+          balance?: number
+          channel_kind: string
+          channel_name: string
+          code?: string | null
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          online?: boolean
+          opening_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          account_number?: string
+          balance?: number
+          channel_kind?: string
+          channel_name?: string
+          code?: string | null
+          created_at?: string
+          daily_limit?: number
+          id?: string
+          online?: boolean
+          opening_balance?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           account_id: string | null
@@ -63,6 +108,7 @@ export type Database = {
           group_tier: string | null
           id: string
           iso_date: string
+          notes: string | null
           sender_account: string | null
           sender_name: string | null
           status: string
@@ -83,6 +129,7 @@ export type Database = {
           group_tier?: string | null
           id?: string
           iso_date: string
+          notes?: string | null
           sender_account?: string | null
           sender_name?: string | null
           status?: string
@@ -103,6 +150,7 @@ export type Database = {
           group_tier?: string | null
           id?: string
           iso_date?: string
+          notes?: string | null
           sender_account?: string | null
           sender_name?: string | null
           status?: string
