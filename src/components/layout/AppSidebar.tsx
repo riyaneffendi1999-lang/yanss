@@ -7,8 +7,8 @@ import {
   Gift,
   Settings,
   UserCircle,
-  Shield,
 } from "lucide-react";
+import logoAsset from "@/assets/maxslot88-logo.png.asset.json";
 
 import {
   Sidebar,
