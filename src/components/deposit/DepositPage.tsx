@@ -438,8 +438,57 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
   };
 
-  const setStatus = (id: string, status: DepositStatus) =>
-    updateMut.mutate({ id, patch: { status } });
+  const openEdit = (r: DepositRow) => {
+    setEditId(r.id);
+    setForm({
+      iso_date: r.iso_date,
+      time_str: r.time_str.slice(0, 5),
+      ticket: r.ticket,
+      username: r.username,
+      full_name: r.full_name,
+      group_tier: r.group_tier ?? "",
+      account_id: r.account_id ?? account?.id ?? bankAccounts[0]?.id ?? "",
+      status: r.status,
+      amount: String(r.amount ?? ""),
+      notes: r.notes ?? "",
+    });
+    setEditOpen(true);
+  };
+
+  const onEditSubmit = async () => {
+    if (!editId) return;
+    if (!form.ticket || !form.username || !form.full_name || !form.amount) {
+      return toast.error("Lengkapi tiket, username, nama, dan jumlah");
+    }
+    const [y, m, d] = form.iso_date.split("-");
+    const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
+    const timeStr = form.time_str.length === 5 ? `${form.time_str}:00` : form.time_str;
+    try {
+      await updateMut.mutateAsync({
+        id: editId,
+        patch: {
+          account_id: form.account_id || null,
+          date_str: dateStr,
+          iso_date: form.iso_date,
+          time_str: timeStr,
+          ticket: form.ticket,
+          username: form.username,
+          full_name: form.full_name,
+          sender_name: formAccount?.account_name ?? null,
+          sender_account: formAccount?.account_number ?? null,
+          group_tier: form.group_tier || null,
+          amount: formAmountNum,
+          status: form.status,
+          notes: form.notes || null,
+        },
+      });
+      toast.success("Transaksi diperbarui");
+      setEditOpen(false);
+      setEditId(null);
+    } catch (e: unknown) {
+      toast.error("Gagal memperbarui", { description: (e as Error).message });
+    }
+  };
 
   const logo = config.logoText ?? config.channel.slice(0, 2).toUpperCase();
 
