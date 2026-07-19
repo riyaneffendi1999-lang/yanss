@@ -15,9 +15,10 @@ import {
   Activity as ActivityIcon,
 } from "lucide-react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -209,7 +210,8 @@ function DashboardPage() {
     return map;
   }, [inRange, bonusTotals]);
 
-  // 7-day trend: amount + count
+  // 7-day trend: amount + count (with Indonesian day labels)
+  const DAY_ID = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
   const trend = useMemo(() => {
     const days: { day: string; amount: number; count: number }[] = [];
     const today = new Date();
@@ -220,7 +222,7 @@ function DashboardPage() {
       const iso = d.toISOString().slice(0, 10);
       const day = deposits.filter((r) => r.iso_date === iso);
       const sum = day.reduce((s, r) => s + Number(r.amount || 0), 0);
-      days.push({ day: `${d.getDate()}/${d.getMonth() + 1}`, amount: sum, count: day.length });
+      days.push({ day: `${DAY_ID[d.getDay()]}, ${d.getDate()}`, amount: sum, count: day.length });
     }
     return days;
   }, [deposits]);
@@ -384,42 +386,84 @@ function DashboardPage() {
       {/* Charts */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-semibold">Deposit Trend</h3>
-              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 7 hari terakhir</p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Jumlah Deposit</span>
-              <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Total Transaksi</span>
-            </div>
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-sky-500">Transaksi 7 Hari Terakhir</h3>
+            <p className="text-xs text-muted-foreground">Jumlah transaksi &amp; total deposit per hari</p>
           </div>
-          <div className="h-72 w-full">
+          <div className="h-80 w-full">
             <ResponsiveContainer>
-              <LineChart data={trend} margin={{ top: 10, right: 12, bottom: 0, left: 0 }}>
+              <ComposedChart data={trend} margin={{ top: 10, right: 16, bottom: 8, left: 0 }}>
                 <defs>
-                  <linearGradient id="lineAmount" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="rgb(139 92 246)" />
-                    <stop offset="50%" stopColor="rgb(59 130 246)" />
-                    <stop offset="100%" stopColor="rgb(236 72 153)" />
-                  </linearGradient>
-                  <linearGradient id="lineCount" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="rgb(16 185 129)" />
-                    <stop offset="100%" stopColor="rgb(250 204 21)" />
+                  <linearGradient id="areaAmount" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%"   stopColor="rgb(59 130 246)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="rgb(59 130 246)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
-                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
-                  tickFormatter={(v) => `${(Number(v) / 1_000_000).toFixed(1)}jt`} />
-                <YAxis yAxisId="right" orientation="right" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip
-                  contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
-                  formatter={(v: number, name) => name === "amount" ? fmt(v) : `${v} trx`}
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.35} vertical={false} />
+                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis
+                  yAxisId="left"
+                  stroke="rgb(59 130 246)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  width={44}
                 />
-                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="url(#lineAmount)" strokeWidth={3} dot={{ r: 3, fill: "rgb(59 130 246)" }} activeDot={{ r: 6 }} />
-                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="url(#lineCount)"  strokeWidth={3} dot={{ r: 3, fill: "rgb(16 185 129)" }} activeDot={{ r: 6 }} />
-              </LineChart>
+                <YAxis
+                  yAxisId="right"
+                  orientation="right"
+                  stroke="rgb(16 185 129)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  width={64}
+                  tickFormatter={(v) => (Number(v) >= 1_000_000 ? `Rp ${(Number(v) / 1_000_000).toFixed(1)}jt` : `Rp ${Number(v).toLocaleString("id-ID")}`)}
+                />
+                <Tooltip
+                  cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }}
+                  contentStyle={{
+                    background: "var(--color-popover)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 10,
+                    fontSize: 12,
+                    boxShadow: "0 8px 24px -12px rgba(0,0,0,.25)",
+                  }}
+                  formatter={(value: number, name) =>
+                    name === "amount"
+                      ? [fmt(Number(value)), "Total Deposit"]
+                      : [`${value}`, "Transaksi"]
+                  }
+                  labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: 4 }}
+                />
+                <Legend
+                  verticalAlign="bottom"
+                  height={28}
+                  iconType="circle"
+                  formatter={(v) => (v === "amount" ? "Total Deposit" : "Transaksi")}
+                  wrapperStyle={{ fontSize: 12 }}
+                />
+                <Area
+                  yAxisId="left"
+                  type="monotone"
+                  dataKey="count"
+                  name="count"
+                  stroke="rgb(59 130 246)"
+                  strokeWidth={2.5}
+                  fill="url(#areaAmount)"
+                  dot={{ r: 3, strokeWidth: 2, stroke: "rgb(59 130 246)", fill: "#fff" }}
+                  activeDot={{ r: 6 }}
+                />
+                <Line
+                  yAxisId="right"
+                  type="monotone"
+                  dataKey="amount"
+                  name="amount"
+                  stroke="rgb(16 185 129)"
+                  strokeWidth={2.5}
+                  dot={{ r: 3, strokeWidth: 2, stroke: "rgb(16 185 129)", fill: "#fff" }}
+                  activeDot={{ r: 6 }}
+                />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
 
