@@ -11,18 +11,21 @@ function AccessGuard({ children }: { children: ReactNode }) {
   const { allowed, fullAccess, loading } = useAllowedPages();
   const navigate = useNavigate();
 
+  // When there is no resolved access (e.g. right after sign-out clears the
+  // cache), skip the guard — the auth gate will redirect to /auth.
+  const hasAnyAccess = fullAccess || allowed.size > 0;
+
   useEffect(() => {
-    if (loading) return;
+    if (loading || !hasAnyAccess) return;
     if (isPageAllowed(pathname, allowed, fullAccess)) return;
-    // Redirect to first allowed page or profile
     const fallback = allowed.has("/dashboard")
       ? "/dashboard"
       : allowed.values().next().value ?? "/profile";
     toast.error("Anda tidak memiliki akses ke halaman tersebut");
     navigate({ to: fallback, replace: true });
-  }, [pathname, allowed, fullAccess, loading, navigate]);
+  }, [pathname, allowed, fullAccess, loading, hasAnyAccess, navigate]);
 
-  if (!loading && !isPageAllowed(pathname, allowed, fullAccess)) {
+  if (!loading && hasAnyAccess && !isPageAllowed(pathname, allowed, fullAccess)) {
     return (
       <div className="flex h-full items-center justify-center p-10 text-sm text-muted-foreground">
         Mengalihkan…
