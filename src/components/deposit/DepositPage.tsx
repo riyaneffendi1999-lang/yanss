@@ -353,7 +353,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     return { total, approved, pending, totalAmount, unik };
   }, [rows]);
 
-  const autoIngestPaste = async (raw: string) => {
+  const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
     const parsed = parseDepositPaste(raw);
     if (parsed.length === 0) {
@@ -366,7 +366,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       ...p,
       channel: config.channel,
       account_id: account?.id ?? null,
-      status: "Pending",
+      status,
     }));
     try {
       await insertMut.mutateAsync(payload);
