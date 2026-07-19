@@ -256,9 +256,7 @@ function ManageAdminPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">#</TableHead>
                 <TableHead>Username</TableHead>
-                <TableHead>Nama Lengkap</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Login Terakhir</TableHead>
@@ -269,28 +267,31 @@ function ManageAdminPage() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="mx-auto h-5 w-5 animate-spin" />
                   </TableCell>
                 </TableRow>
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-destructive">
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-destructive">
                     {(error as Error)?.message ?? "Gagal memuat"}
                   </TableCell>
                 </TableRow>
               ) : rows.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                     Tidak ada data
                   </TableCell>
                 </TableRow>
               ) : (
-                rows.map((r, i) => (
+                rows.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="text-muted-foreground">{i + 1}</TableCell>
-                    <TableCell className="font-medium">{r.username}</TableCell>
-                    <TableCell>{r.full_name ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{r.username}</div>
+                      {r.full_name && (
+                        <div className="text-[11px] text-muted-foreground">{r.full_name}</div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {r.roles.length === 0 ? (
