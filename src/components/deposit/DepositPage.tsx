@@ -382,6 +382,10 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   // Pagination — 20 rows per page
   const PAGE_SIZE = 20;
   const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [statusFilter, search, effFrom, effTo, accountId]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
