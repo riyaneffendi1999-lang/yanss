@@ -422,7 +422,10 @@ function DashboardPage() {
                     contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
                     formatter={(v: number) => fmt(v)}
                   />
-                  <Bar dataKey="amount" fill="var(--color-primary)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
+                    {channelStats.map((c) => (<Cell key={c.channel} fill={c.fill} />))}
+                  </Bar>
+
                 </BarChart>
               </ResponsiveContainer>
             )}
