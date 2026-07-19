@@ -84,6 +84,7 @@ function LuckySpinPage() {
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
+  const [inputPage, setInputPage] = useState(1);
 
   useEffect(() => {
     try { window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows)); } catch { /* ignore */ }
