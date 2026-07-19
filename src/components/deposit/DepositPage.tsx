@@ -182,29 +182,33 @@ export function parseDepositPaste(text: string): Array<{
 }
 
 const STAT_TONES = {
-  blue: "from-sky-500/15 to-sky-500/0 border-sky-500/20 text-sky-300",
-  amber: "from-amber-500/15 to-amber-500/0 border-amber-500/20 text-amber-300",
-  emerald: "from-emerald-500/15 to-emerald-500/0 border-emerald-500/20 text-emerald-300",
-  violet: "from-violet-500/15 to-violet-500/0 border-violet-500/20 text-violet-300",
-  rose: "from-rose-500/15 to-rose-500/0 border-rose-500/20 text-rose-300",
+  blue:    { bg: "bg-sky-50 dark:bg-sky-500/10 border-sky-200/70 dark:border-sky-500/25",           label: "text-sky-700 dark:text-sky-300",         value: "text-sky-600 dark:text-sky-300",         hint: "text-sky-700/60 dark:text-sky-200/60" },
+  amber:   { bg: "bg-amber-50 dark:bg-amber-500/10 border-amber-200/70 dark:border-amber-500/25",   label: "text-amber-800 dark:text-amber-300",     value: "text-amber-600 dark:text-amber-300",     hint: "text-amber-700/60 dark:text-amber-200/60" },
+  emerald: { bg: "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200/70 dark:border-emerald-500/25", label: "text-emerald-800 dark:text-emerald-300", value: "text-emerald-600 dark:text-emerald-300", hint: "text-emerald-700/60 dark:text-emerald-200/60" },
+  teal:    { bg: "bg-teal-50 dark:bg-teal-500/10 border-teal-200/70 dark:border-teal-500/25",       label: "text-teal-800 dark:text-teal-300",       value: "text-teal-600 dark:text-teal-300",       hint: "text-teal-700/60 dark:text-teal-200/60" },
+  violet:  { bg: "bg-violet-50 dark:bg-violet-500/10 border-violet-200/70 dark:border-violet-500/25", label: "text-violet-800 dark:text-violet-300",   value: "text-violet-600 dark:text-violet-300",   hint: "text-violet-700/60 dark:text-violet-200/60" },
+  indigo:  { bg: "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200/70 dark:border-indigo-500/25", label: "text-indigo-800 dark:text-indigo-300",   value: "text-indigo-600 dark:text-indigo-300",   hint: "text-indigo-700/60 dark:text-indigo-200/60" },
+  rose:    { bg: "bg-rose-50 dark:bg-rose-500/10 border-rose-200/70 dark:border-rose-500/25",       label: "text-rose-800 dark:text-rose-300",       value: "text-rose-600 dark:text-rose-300",       hint: "text-rose-700/60 dark:text-rose-200/60" },
 } as const;
 
 function StatTile({
   label, value, hint, tone, index,
 }: { label: string; value: string; hint?: string; tone: keyof typeof STAT_TONES; index: number; }) {
+  const t = STAT_TONES[tone];
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.04 }}
-      className={cn("relative overflow-hidden rounded-xl border bg-gradient-to-br p-4 soft-shadow", STAT_TONES[tone])}
+      className={cn("relative overflow-hidden rounded-xl border p-4 shadow-sm", t.bg)}
     >
-      <div className="text-xs font-medium text-muted-foreground">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</div>
-      {hint && <div className="mt-0.5 text-[11px] text-muted-foreground">{hint}</div>}
+      <div className={cn("text-xs font-semibold", t.label)}>{label}</div>
+      <div className={cn("mt-2 text-3xl font-bold tracking-tight tabular-nums", t.value)}>{value}</div>
+      {hint && <div className={cn("mt-0.5 text-[11px]", t.hint)}>{hint}</div>}
     </motion.div>
   );
 }
+
 
 const STATUS_STYLES: Record<DepositStatus, { pill: string; dot: string }> = {
   Approved: { pill: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", dot: "bg-emerald-400" },
@@ -376,7 +380,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const sumFee = sumBy("Biaya admin");
     const opening = Number(account?.opening_balance ?? 0);
     const computedBalance = opening + sumApproved + sumUnik + sumPending - sumOut - sumFee;
-    return { total, approved, pending, totalAmount, unik, computedBalance, opening };
+    const outCount = scoped.filter((r) => r.status === OUTFLOW_STATUS).length;
+    const feeCount = scoped.filter((r) => r.status === "Biaya admin").length;
+    return { total, approved, pending, totalAmount, unik, computedBalance, opening, outCount, feeCount };
   }, [rows, accountId, account, OUTFLOW_STATUS]);
 
   // Pagination — 20 rows per page
@@ -591,11 +597,11 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
       {/* Stats */}
       <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <StatTile index={0} tone="blue" label="Total Transaksi" value={String(totals.total)} hint={`${totals.approved} approved`} />
-        <StatTile index={1} tone="amber" label="Total Pending" value={String(totals.pending)} hint="Perlu diproses" />
-        <StatTile index={2} tone="emerald" label="Total Nominal" value={rp(totals.totalAmount)} hint="Akumulasi" />
-        <StatTile index={3} tone="violet" label="Total Unik" value={String(totals.unik)} hint="trx" />
-        <StatTile index={4} tone="rose" label="Approved" value={String(totals.approved)} hint="trx" />
+        <StatTile index={0} tone="blue"   label="Total Transaksi"           value={String(totals.total)}   hint={`${totals.approved} approved`} />
+        <StatTile index={1} tone="amber"  label="Total Pending"             value={String(totals.pending)} hint="Perlu diproses" />
+        <StatTile index={2} tone="teal"   label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"} value={String(totals.outCount)} hint="trx" />
+        <StatTile index={3} tone="violet" label="Total Unik"                value={String(totals.unik)}    hint="trx" />
+        <StatTile index={4} tone="indigo" label="Total Biaya Admin"         value={String(totals.feeCount)} hint="trx" />
       </div>
 
 
