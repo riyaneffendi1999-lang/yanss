@@ -330,6 +330,55 @@ function DashboardPage() {
         })}
       </div>
 
+      {/* Member Group Totals (aggregated across all deposits in range) */}
+      <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold">Total per Group Member</h3>
+            <p className="text-xs text-muted-foreground">Akumulasi seluruh channel deposit · periode terpilih</p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border/60 text-left text-[11px] uppercase tracking-wider text-muted-foreground">
+                <th className="py-2 pr-3 font-medium">Group</th>
+                <th className="py-2 px-3 font-medium text-right">Transaksi</th>
+                <th className="py-2 pl-3 font-medium text-right">Total Nominal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MEMBER_GROUPS.map((g) => {
+                const t = memberGroupTotals[g];
+                return (
+                  <tr key={g} className="border-b border-border/40 last:border-0">
+                    <td className="py-2.5 pr-3">
+                      <span className="inline-flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full" style={{ background: GROUP_COLORS[g] }} />
+                        <span className="font-medium">{g}</span>
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">{t.count}</td>
+                    <td className="py-2.5 pl-3 text-right tabular-nums font-semibold">{fmt(t.total)}</td>
+                  </tr>
+                );
+              })}
+              <tr className="text-[13px]">
+                <td className="pt-3 pr-3 font-semibold">Total</td>
+                <td className="pt-3 px-3 text-right tabular-nums font-semibold">
+                  {MEMBER_GROUPS.reduce((s, g) => s + memberGroupTotals[g].count, 0)}
+                </td>
+                <td className="pt-3 pl-3 text-right tabular-nums font-semibold">
+                  {fmt(MEMBER_GROUPS.reduce((s, g) => s + memberGroupTotals[g].total, 0))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+
+
       {/* Charts */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
