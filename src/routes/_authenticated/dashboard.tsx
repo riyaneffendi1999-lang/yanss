@@ -99,27 +99,37 @@ function statusBadge(s: string) {
 
 // Read locally-persisted bonus totals (Lucky Spin, etc.)
 function useBonusTotals() {
-  const [state, setState] = useState({ total: 0, count: 0 });
+  const [state, setState] = useState({ total: 0, count: 0, perProgram: [] as { name: string; member: number; bonus: number }[] });
   useEffect(() => {
     const compute = () => {
+      const programs: { key: string; name: string }[] = [
+        { key: "lucky-spin/complete-rows", name: "Lucky Spin" },
+        { key: "kamis-ceria:complete", name: "Kamis Ceria" },
+        { key: "gebyar-turnover:complete", name: "Gebyar Turnover" },
+      ];
       let total = 0;
       let count = 0;
-      const keys = ["lucky-spin/complete-rows", "lucky-spin:complete", "kamis-ceria:complete", "gebyar-turnover:complete"];
-      for (const k of keys) {
+      const perProgram: { name: string; member: number; bonus: number }[] = [];
+      for (const p of programs) {
+        let pTotal = 0;
+        const members = new Set<string>();
         try {
-          const raw = localStorage.getItem(k);
-          if (!raw) continue;
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr)) {
-            for (const r of arr) {
-              const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
-              if (!Number.isNaN(v)) total += v;
-              count += 1;
+          const raw = localStorage.getItem(p.key);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              for (const r of arr) {
+                const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
+                if (!Number.isNaN(v)) { pTotal += v; total += v; }
+                count += 1;
+                if (r?.username) members.add(String(r.username));
+              }
             }
           }
         } catch { /* ignore */ }
+        perProgram.push({ name: p.name, bonus: pTotal, member: members.size });
       }
-      setState({ total, count });
+      setState({ total, count, perProgram });
     };
     compute();
     const onStorage = () => compute();
