@@ -228,13 +228,13 @@ function DashboardPage() {
   }, [deposits]);
 
   // Group totals aggregated across all deposits in range (VIP/High/Low/New Reg/Reguler)
-  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
+  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Medium"] as const;
   const GROUP_COLORS: Record<string, string> = {
     VIP: "rgb(251 191 36)",
     High: "rgb(244 63 94)",
     Low: "rgb(56 189 248)",
     "New Registration": "rgb(52 211 153)",
-    Reguler: "rgb(167 139 250)",
+    Medium: "rgb(167 139 250)",
   };
   const memberGroupTotals = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
