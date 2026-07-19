@@ -287,12 +287,7 @@ function DashboardPage() {
         title="Dashboard"
         description="Ringkasan operasional realtime dari seluruh channel"
         actions={
-          <>
-            <DateRangeSelect value={dateRange} onChange={setDateRange} />
-            <Button size="sm" className="gap-1.5" asChild>
-              <Link to="/deposit/bank/bca"><ArrowUpRight className="h-4 w-4" /> Live Report</Link>
-            </Button>
-          </>
+          <DateRangeSelect value={dateRange} onChange={setDateRange} />
         }
       />
 
