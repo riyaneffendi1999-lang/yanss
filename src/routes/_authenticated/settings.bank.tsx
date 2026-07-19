@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Search, Landmark, Wallet, Smartphone, Power } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,12 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/settings/bank")({
   head: () => ({ meta: [{ title: "Manage Bank — Admin Console" }] }),
@@ -25,26 +27,16 @@ export const Route = createFileRoute("/_authenticated/settings/bank")({
 type Channel = "bank" | "emoney" | "pulsa";
 type BankRow = {
   id: string;
-  channel: Channel;
-  name: string;
-  code: string;
-  accountName: string;
-  accountNumber: string;
+  channel_kind: Channel;
+  channel_name: string;
+  code: string | null;
+  account_name: string;
+  account_number: string;
+  opening_balance: number;
   balance: number;
-  dailyLimit: number;
+  daily_limit: number;
   online: boolean;
 };
-
-const seed: BankRow[] = [
-  { id: "1", channel: "bank", name: "BCA", code: "BCA", accountName: "PT MAXSLOT MEDIA", accountNumber: "1234567890", balance: 152_450_000, dailyLimit: 500_000_000, online: true },
-  { id: "2", channel: "bank", name: "MANDIRI", code: "MDR", accountName: "PT MAXSLOT MEDIA", accountNumber: "1400012345678", balance: 88_320_000, dailyLimit: 500_000_000, online: true },
-  { id: "3", channel: "bank", name: "BNI", code: "BNI", accountName: "PT MAXSLOT MEDIA", accountNumber: "0223344556", balance: 62_100_000, dailyLimit: 300_000_000, online: false },
-  { id: "4", channel: "bank", name: "BRI", code: "BRI", accountName: "PT MAXSLOT MEDIA", accountNumber: "0987655544", balance: 45_800_000, dailyLimit: 300_000_000, online: true },
-  { id: "5", channel: "emoney", name: "DANA", code: "DANA", accountName: "MAXSLOT", accountNumber: "081234567890", balance: 18_450_000, dailyLimit: 100_000_000, online: true },
-  { id: "6", channel: "emoney", name: "OVO", code: "OVO", accountName: "MAXSLOT", accountNumber: "081298765432", balance: 12_900_000, dailyLimit: 100_000_000, online: true },
-  { id: "7", channel: "emoney", name: "GOPAY", code: "GOPAY", accountName: "MAXSLOT", accountNumber: "081211112222", balance: 9_720_000, dailyLimit: 80_000_000, online: false },
-  { id: "8", channel: "pulsa", name: "TELKOMSEL", code: "TSEL", accountName: "PPOB", accountNumber: "081377778888", balance: 3_500_000, dailyLimit: 25_000_000, online: true },
-];
 
 const channelMeta: Record<Channel, { label: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = {
   bank: { label: "Bank", icon: Landmark, tone: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20" },
@@ -53,23 +45,78 @@ const channelMeta: Record<Channel, { label: string; icon: React.ComponentType<{ 
 };
 
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
-const emptyForm = (): Omit<BankRow, "id"> => ({
-  channel: "bank", name: "", code: "", accountName: "", accountNumber: "", balance: 0, dailyLimit: 0, online: true,
+const emptyForm = () => ({
+  channel_kind: "bank" as Channel,
+  channel_name: "",
+  code: "",
+  account_name: "",
+  account_number: "",
+  opening_balance: 0,
+  balance: 0,
+  daily_limit: 0,
+  online: true,
 });
 
 function ManageBankPage() {
-  const [rows, setRows] = useState<BankRow[]>(seed);
+  const qc = useQueryClient();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"all" | Channel>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<BankRow | null>(null);
-  const [form, setForm] = useState<Omit<BankRow, "id">>(emptyForm());
+  const [form, setForm] = useState(emptyForm());
+
+  const { data: rows = [] } = useQuery<BankRow[]>({
+    queryKey: ["bank_accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("bank_accounts" as never)
+        .select("*")
+        .order("channel_kind")
+        .order("channel_name");
+      if (error) throw error;
+      return (data ?? []) as unknown as BankRow[];
+    },
+  });
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["bank_accounts"] });
+  };
+
+  const upsertMut = useMutation({
+    mutationFn: async (payload: Partial<BankRow> & { id?: string }) => {
+      if (payload.id) {
+        const { error } = await supabase.from("bank_accounts" as never).update(payload as never).eq("id", payload.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("bank_accounts" as never).insert(payload as never);
+        if (error) throw error;
+      }
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("bank_accounts" as never).delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
+
+  const toggleMut = useMutation({
+    mutationFn: async ({ id, online }: { id: string; online: boolean }) => {
+      const { error } = await supabase.from("bank_accounts" as never).update({ online } as never).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: invalidateAll,
+  });
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      const matchTab = tab === "all" || r.channel === tab;
+      const matchTab = tab === "all" || r.channel_kind === tab;
       const query = q.trim().toLowerCase();
-      const matchQ = !query || [r.name, r.code, r.accountName, r.accountNumber].some((v) => v.toLowerCase().includes(query));
+      const matchQ = !query || [r.channel_name, r.code ?? "", r.account_name, r.account_number]
+        .some((v) => v.toLowerCase().includes(query));
       return matchTab && matchQ;
     });
   }, [rows, q, tab]);
@@ -77,30 +124,42 @@ function ManageBankPage() {
   const stats = useMemo(() => ({
     total: rows.length,
     online: rows.filter((r) => r.online).length,
-    balance: rows.reduce((a, b) => a + b.balance, 0),
-    limit: rows.reduce((a, b) => a + b.dailyLimit, 0),
+    balance: rows.reduce((a, b) => a + Number(b.balance), 0),
+    limit: rows.reduce((a, b) => a + Number(b.daily_limit), 0),
   }), [rows]);
 
   function openCreate() { setEditing(null); setForm(emptyForm()); setDialogOpen(true); }
-  function openEdit(r: BankRow) { setEditing(r); setForm({ ...r }); setDialogOpen(true); }
-  function save() {
-    if (!form.name || !form.accountNumber) { toast.error("Nama & Nomor Rekening wajib diisi"); return; }
-    if (editing) {
-      setRows((rs) => rs.map((r) => (r.id === editing.id ? { ...editing, ...form } : r)));
-      toast.success(`${form.name} diperbarui`);
-    } else {
-      setRows((rs) => [...rs, { ...form, id: crypto.randomUUID() }]);
-      toast.success(`${form.name} ditambahkan`);
+  function openEdit(r: BankRow) {
+    setEditing(r);
+    setForm({
+      channel_kind: r.channel_kind,
+      channel_name: r.channel_name,
+      code: r.code ?? "",
+      account_name: r.account_name,
+      account_number: r.account_number,
+      opening_balance: Number(r.opening_balance),
+      balance: Number(r.balance),
+      daily_limit: Number(r.daily_limit),
+      online: r.online,
+    });
+    setDialogOpen(true);
+  }
+  async function save() {
+    if (!form.channel_name || !form.account_number) {
+      toast.error("Nama Bank & Nomor Rekening wajib diisi"); return;
     }
-    setDialogOpen(false);
+    try {
+      await upsertMut.mutateAsync({ ...(editing ? { id: editing.id } : {}), ...form });
+      toast.success(editing ? `${form.channel_name} diperbarui` : `${form.channel_name} ditambahkan`);
+      setDialogOpen(false);
+    } catch (e: unknown) {
+      toast.error("Gagal menyimpan", { description: (e as Error).message });
+    }
   }
-  function remove(r: BankRow) {
-    if (!confirm(`Hapus ${r.name}?`)) return;
-    setRows((rs) => rs.filter((x) => x.id !== r.id));
-    toast.success(`${r.name} dihapus`);
-  }
-  function toggleOnline(r: BankRow, v: boolean) {
-    setRows((rs) => rs.map((x) => (x.id === r.id ? { ...x, online: v } : x)));
+  async function remove(r: BankRow) {
+    if (!confirm(`Hapus ${r.channel_name}?`)) return;
+    try { await deleteMut.mutateAsync(r.id); toast.success(`${r.channel_name} dihapus`); }
+    catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
   }
 
   return (
@@ -108,7 +167,7 @@ function ManageBankPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Manage Bank</h1>
-          <p className="text-sm text-muted-foreground">Kelola bank, e-money & pulsa: saldo, status online/offline, dan limit harian.</p>
+          <p className="text-sm text-muted-foreground">Kelola bank, e-money & pulsa: saldo awal, status online/offline, dan limit harian.</p>
         </div>
         <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Tambah Metode</Button>
       </div>
@@ -140,18 +199,17 @@ function ManageBankPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Channel</TableHead>
-                <TableHead>Nama</TableHead>
+                <TableHead>Nama Bank</TableHead>
                 <TableHead>Atas Nama</TableHead>
-                <TableHead>No. Rekening</TableHead>
-                <TableHead className="text-right">Saldo</TableHead>
-                <TableHead className="text-right">Limit Harian</TableHead>
+                <TableHead>Nomor Rekening</TableHead>
+                <TableHead className="text-right">Saldo Awal</TableHead>
                 <TableHead className="text-center">Status</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((r) => {
-                const m = channelMeta[r.channel];
+                const m = channelMeta[r.channel_kind];
                 const Icon = m.icon;
                 return (
                   <TableRow key={r.id}>
@@ -160,14 +218,16 @@ function ManageBankPage() {
                         <Icon className="h-3 w-3" /> {m.label}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-medium">{r.name} <span className="text-xs text-muted-foreground">({r.code})</span></TableCell>
-                    <TableCell>{r.accountName}</TableCell>
-                    <TableCell className="font-mono text-xs">{r.accountNumber}</TableCell>
-                    <TableCell className="text-right font-semibold">Rp {fmt(r.balance)}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">Rp {fmt(r.dailyLimit)}</TableCell>
+                    <TableCell className="font-medium">
+                      {r.channel_name}
+                      {r.code && <span className="ml-1 text-xs text-muted-foreground">({r.code})</span>}
+                    </TableCell>
+                    <TableCell>{r.account_name}</TableCell>
+                    <TableCell className="font-mono text-xs">{r.account_number}</TableCell>
+                    <TableCell className="text-right font-semibold">Rp {fmt(Number(r.opening_balance))}</TableCell>
                     <TableCell className="text-center">
                       <div className="inline-flex items-center gap-2">
-                        <Switch checked={r.online} onCheckedChange={(v) => toggleOnline(r, v)} />
+                        <Switch checked={r.online} onCheckedChange={(v) => toggleMut.mutate({ id: r.id, online: v })} />
                         <span className={`text-xs ${r.online ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
                           {r.online ? "Online" : "Offline"}
                         </span>
@@ -175,7 +235,7 @@ function ManageBankPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => toggleOnline(r, !r.online)} title="Toggle">
+                        <Button size="icon" variant="ghost" onClick={() => toggleMut.mutate({ id: r.id, online: !r.online })} title="Toggle">
                           <Power className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => openEdit(r)}>
@@ -191,8 +251,8 @@ function ManageBankPage() {
               })}
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                    Tidak ada data.
+                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                    Belum ada data. Klik <b>Tambah Metode</b>.
                   </TableCell>
                 </TableRow>
               )}
@@ -202,12 +262,11 @@ function ManageBankPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogTrigger asChild><span className="hidden" /></DialogTrigger>
         <DialogContent className="max-w-lg">
           <DialogHeader><DialogTitle>{editing ? "Edit Metode" : "Tambah Metode"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Channel">
-              <Select value={form.channel} onValueChange={(v) => setForm({ ...form, channel: v as Channel })}>
+              <Select value={form.channel_kind} onValueChange={(v) => setForm({ ...form, channel_kind: v as Channel })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bank">Bank</SelectItem>
@@ -216,23 +275,23 @@ function ManageBankPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Nama"><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value.toUpperCase() })} /></Field>
+            <Field label="Nama Bank"><Input value={form.channel_name} onChange={(e) => setForm({ ...form, channel_name: e.target.value.toUpperCase() })} /></Field>
             <Field label="Kode"><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></Field>
-            <Field label="Atas Nama"><Input value={form.accountName} onChange={(e) => setForm({ ...form, accountName: e.target.value })} /></Field>
-            <Field label="No. Rekening" className="col-span-2"><Input value={form.accountNumber} onChange={(e) => setForm({ ...form, accountNumber: e.target.value })} /></Field>
-            <Field label="Saldo Awal"><Input type="number" value={form.balance} onChange={(e) => setForm({ ...form, balance: Number(e.target.value) })} /></Field>
-            <Field label="Limit Harian"><Input type="number" value={form.dailyLimit} onChange={(e) => setForm({ ...form, dailyLimit: Number(e.target.value) })} /></Field>
+            <Field label="Atas Nama"><Input value={form.account_name} onChange={(e) => setForm({ ...form, account_name: e.target.value })} /></Field>
+            <Field label="Nomor Rekening" className="col-span-2"><Input value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} /></Field>
+            <Field label="Saldo Awal"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value), balance: Number(e.target.value) })} /></Field>
+            <Field label="Limit Harian"><Input type="number" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} /></Field>
             <div className="col-span-2 flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="text-sm font-medium">Status Online</p>
-                <p className="text-xs text-muted-foreground">Aktifkan agar tampil di halaman deposit.</p>
+                <p className="text-xs text-muted-foreground">Hanya rekening aktif yang tampil di halaman deposit.</p>
               </div>
               <Switch checked={form.online} onCheckedChange={(v) => setForm({ ...form, online: v })} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Batal</Button>
-            <Button onClick={save}>{editing ? "Simpan" : "Tambah"}</Button>
+            <Button onClick={save} disabled={upsertMut.isPending}>{editing ? "Simpan" : "Tambah"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
