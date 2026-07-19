@@ -1,11 +1,11 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Bell, LogOut, Search, UserCircle } from "lucide-react";
+import { Bell, LogOut, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,16 @@ import { useQueryClient } from "@tanstack/react-query";
 export function Topbar() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [hasAuthEvent, setHasAuthEvent] = useState(false);
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setHasAuthEvent(true);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function signOut() {
     await qc.cancelQueries();
@@ -30,18 +40,19 @@ export function Topbar() {
 
   return (
     <div className="flex flex-1 items-center gap-3">
-      <div className="relative hidden max-w-md flex-1 md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Cari transaksi, member, bank…"
-          className="h-9 pl-9"
-        />
-      </div>
       <div className="ml-auto flex items-center gap-1.5">
         <ThemeToggle />
-        <Button variant="ghost" size="icon" aria-label="Notifikasi" className="relative">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Notifikasi"
+          className="relative"
+          onClick={() => setHasAuthEvent(false)}
+        >
           <Bell className="h-4 w-4" />
-          <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+          {hasAuthEvent && (
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+          )}
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

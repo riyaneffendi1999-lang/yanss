@@ -228,13 +228,13 @@ function DashboardPage() {
   }, [deposits]);
 
   // Group totals aggregated across all deposits in range (VIP/High/Low/New Reg/Reguler)
-  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
+  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Medium"] as const;
   const GROUP_COLORS: Record<string, string> = {
     VIP: "rgb(251 191 36)",
     High: "rgb(244 63 94)",
     Low: "rgb(56 189 248)",
     "New Registration": "rgb(52 211 153)",
-    Reguler: "rgb(167 139 250)",
+    Medium: "rgb(167 139 250)",
   };
   const memberGroupTotals = useMemo(() => {
     const map: Record<string, { total: number; count: number }> = {};
@@ -246,7 +246,7 @@ function DashboardPage() {
         /high/i.test(raw) ? "High" :
         /low/i.test(raw) ? "Low" :
         /new/i.test(raw) ? "New Registration" :
-        "Reguler";
+        "Medium";
       map[key].total += Number(r.amount || 0);
       map[key].count += 1;
     }
@@ -287,12 +287,7 @@ function DashboardPage() {
         title="Dashboard"
         description="Ringkasan operasional realtime dari seluruh channel"
         actions={
-          <>
-            <DateRangeSelect value={dateRange} onChange={setDateRange} />
-            <Button size="sm" className="gap-1.5" asChild>
-              <Link to="/deposit/bank/bca"><ArrowUpRight className="h-4 w-4" /> Live Report</Link>
-            </Button>
-          </>
+          <DateRangeSelect value={dateRange} onChange={setDateRange} />
         }
       />
 

@@ -41,7 +41,6 @@ const permissions: Perm[] = [
   { group: "Admin", key: "admin.manage", label: "Tambah/Ubah/Hapus Admin" },
   { group: "Role", key: "role.manage", label: "Kelola Role & Akses" },
   { group: "Report", key: "report.view", label: "Lihat Report" },
-  { group: "Report", key: "report.export", label: "Export Report" },
   { group: "Settings", key: "settings.general", label: "Settings Umum" },
   { group: "Settings", key: "settings.security", label: "Settings Keamanan" },
 ];
@@ -49,7 +48,7 @@ const permissions: Perm[] = [
 const defaults: Record<RoleKey, string[]> = {
   head: permissions.map((p) => p.key),
   supervisor: permissions.filter((p) => !["role.manage", "admin.manage", "settings.security"].includes(p.key)).map((p) => p.key),
-  ast_spv: ["dashboard.view", "deposit.view", "deposit.create", "deposit.approve", "deposit.reject", "deposit.export", "bonus.view", "bonus.inject", "bank.view", "bank.toggle", "admin.view", "report.view", "report.export"],
+  ast_spv: ["dashboard.view", "deposit.view", "deposit.create", "deposit.approve", "deposit.reject", "deposit.export", "bonus.view", "bonus.inject", "bank.view", "bank.toggle", "admin.view", "report.view"],
   staff: ["dashboard.view", "deposit.view", "deposit.create", "bonus.view", "bank.view", "report.view"],
 };
 
