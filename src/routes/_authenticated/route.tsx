@@ -5,11 +5,13 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    // Use getSession() (reads from localStorage, no network round-trip) instead
+    // of getUser() to keep client-side navigation instant.
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
-    return { user: data.user };
+    return { user: data.session.user };
   },
   component: () => (
     <DashboardLayout>
