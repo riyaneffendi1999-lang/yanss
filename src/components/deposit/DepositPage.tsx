@@ -339,8 +339,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [rows, statusFilter, search, effFrom, effTo]);
 
   const resetFilters = () => {
-    setDatePreset("30d");
-    setDateFrom(""); setDateTo("");
+    setDateRange({ preset: "current_month", from: "", to: "" });
     setStatusFilter("all");
     setSearch("");
   };
