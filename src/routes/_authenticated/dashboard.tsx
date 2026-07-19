@@ -336,7 +336,7 @@ function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Deposit Trend</h3>
-              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 14 hari terakhir</p>
+              <p className="text-xs text-muted-foreground">Jumlah deposit & total transaksi · 7 hari terakhir</p>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Jumlah Deposit</span>
@@ -346,6 +346,17 @@ function DashboardPage() {
           <div className="h-72 w-full">
             <ResponsiveContainer>
               <LineChart data={trend} margin={{ top: 10, right: 12, bottom: 0, left: 0 }}>
+                <defs>
+                  <linearGradient id="lineAmount" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="rgb(139 92 246)" />
+                    <stop offset="50%" stopColor="rgb(59 130 246)" />
+                    <stop offset="100%" stopColor="rgb(236 72 153)" />
+                  </linearGradient>
+                  <linearGradient id="lineCount" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="rgb(16 185 129)" />
+                    <stop offset="100%" stopColor="rgb(250 204 21)" />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
                 <YAxis yAxisId="left" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
@@ -355,11 +366,12 @@ function DashboardPage() {
                   contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
                   formatter={(v: number, name) => name === "amount" ? fmt(v) : `${v} trx`}
                 />
-                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
-                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="rgb(52 211 153)"     strokeWidth={2.5} dot={{ r: 2 }} activeDot={{ r: 5 }} />
+                <Line yAxisId="left"  type="monotone" dataKey="amount" stroke="url(#lineAmount)" strokeWidth={3} dot={{ r: 3, fill: "rgb(59 130 246)" }} activeDot={{ r: 6 }} />
+                <Line yAxisId="right" type="monotone" dataKey="count"  stroke="url(#lineCount)"  strokeWidth={3} dot={{ r: 3, fill: "rgb(16 185 129)" }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
+
         </div>
 
         <div className="glass-panel soft-shadow rounded-xl p-5">
