@@ -27,6 +27,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { useAllowedPages, isPageAllowed } from "@/hooks/useAccess";
 
 type Item = { title: string; url: string; icon?: React.ComponentType<{ className?: string }> };
 type Group = { label: string; icon: React.ComponentType<{ className?: string }>; items: Item[] };
@@ -91,6 +92,16 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const isActive = (url: string) => pathname === url;
+  const { allowed, fullAccess } = useAllowedPages();
+  const canSee = (url: string) => isPageAllowed(url, allowed, fullAccess);
+
+  const visibleSingles = singles.filter((s) => canSee(s.url));
+  const visibleGroups = groups
+    .map((g) => ({ ...g, items: g.items.filter((it) => canSee(it.url)) }))
+    .filter((g) => g.items.length > 0);
+  const visibleFooter = footerItems.filter((it) => canSee(it.url));
+
+
 
   return (
     <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
@@ -115,7 +126,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {singles.map((item) => (
+              {visibleSingles.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton
                     asChild
@@ -136,7 +147,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {groups.map((g) => (
+        {visibleGroups.map((g) => (
           <SidebarGroup key={g.label} className="py-0.5">
             <SidebarGroupLabel
               className={cn(
@@ -190,7 +201,7 @@ export function AppSidebar() {
 
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
-          {footerItems.map((item) => (
+          {visibleFooter.map((item) => (
             <SidebarMenuItem key={item.url}>
               <SidebarMenuButton
                 asChild
