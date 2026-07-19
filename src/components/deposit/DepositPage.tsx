@@ -350,13 +350,14 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
 
   const totals = useMemo(() => {
-    const total = rows.length;
-    const approved = rows.filter((r) => r.status === "Approved").length;
-    const pending = rows.filter((r) => r.status === "Pending").length;
-    const totalAmount = rows.reduce((s, r) => s + Number(r.amount), 0);
-    const unik = rows.filter((r) => r.status === "Unik").length;
+    const scoped = accountId ? rows.filter((r) => r.account_id === accountId) : rows;
+    const total = scoped.length;
+    const approved = scoped.filter((r) => r.status === "Approved").length;
+    const pending = scoped.filter((r) => r.status === "Pending").length;
+    const totalAmount = scoped.reduce((s, r) => s + Number(r.amount), 0);
+    const unik = scoped.filter((r) => r.status === "Unik").length;
     return { total, approved, pending, totalAmount, unik };
-  }, [rows]);
+  }, [rows, accountId]);
 
   const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
