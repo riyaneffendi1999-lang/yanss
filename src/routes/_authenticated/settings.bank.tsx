@@ -44,6 +44,12 @@ const channelMeta: Record<Channel, { label: string; icon: React.ComponentType<{ 
   pulsa: { label: "Pulsa", icon: Smartphone, tone: "bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/20" },
 };
 
+const CHANNEL_NAMES: Record<Channel, string[]> = {
+  bank: ["BCA", "BNI", "BRI", "MANDIRI"],
+  emoney: ["DANA", "OVO", "GOPAY", "LINKAJA"],
+  pulsa: ["TELKOMSEL", "XL"],
+};
+
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
 const emptyForm = () => ({
   channel_kind: "bank" as Channel,
