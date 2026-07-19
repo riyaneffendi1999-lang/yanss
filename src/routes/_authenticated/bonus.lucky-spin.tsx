@@ -35,7 +35,8 @@ type CompleteRow = {
 };
 
 const MAX_INPUT_TICKETS = 10;
-const PAGE_SIZE = 10;
+const INPUT_PAGE_SIZE = 20;
+const COMPLETE_PAGE_SIZE = 10;
 
 function randomTicket() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
