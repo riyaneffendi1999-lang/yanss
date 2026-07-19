@@ -139,7 +139,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{g.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <Collapsible defaultOpen={groupActive(g)} className="group/collapsible">
+                <Collapsible defaultOpen={false} className="group/collapsible">
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton tooltip={g.label}>

@@ -3,6 +3,7 @@ import { Bell, LogOut, Search, UserCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -37,6 +38,7 @@ export function Topbar() {
         />
       </div>
       <div className="ml-auto flex items-center gap-1.5">
+        <ThemeToggle />
         <Button variant="ghost" size="icon" aria-label="Notifikasi" className="relative">
           <Bell className="h-4 w-4" />
           <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
