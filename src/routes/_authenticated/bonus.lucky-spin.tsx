@@ -419,8 +419,8 @@ function LuckySpinPage() {
           {/* Pagination */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-5 py-3 text-xs text-muted-foreground">
             <span>
-              Showing {filteredComplete.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1} to{" "}
-              {Math.min(currentPage * PAGE_SIZE, filteredComplete.length)} of{" "}
+              Showing {filteredComplete.length === 0 ? 0 : (currentPage - 1) * COMPLETE_PAGE_SIZE + 1} to{" "}
+              {Math.min(currentPage * COMPLETE_PAGE_SIZE, filteredComplete.length)} of{" "}
               {filteredComplete.length} entries
             </span>
             <Pagination page={currentPage} totalPages={totalPages} onChange={setPage} />
