@@ -250,7 +250,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [bankAccounts, accountId]);
   const account = bankAccounts.find((a) => a.id === accountId);
 
-  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "current_month", from: "", to: "" });
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [statusFilter, setStatusFilter] = useState<"all" | DepositStatus>("all");
   const [search, setSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
@@ -339,10 +339,35 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [rows, statusFilter, search, effFrom, effTo]);
 
   const resetFilters = () => {
-    setDateRange({ preset: "current_month", from: "", to: "" });
+    setDateRange({ preset: "today", from: "", to: "" });
     setStatusFilter("all");
     setSearch("");
   };
+
+  const GROUP_OPTIONS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
+  const GROUP_TONES: Record<string, string> = {
+    VIP: "from-amber-500/20 to-amber-500/0 ring-amber-500/30 text-amber-300",
+    High: "from-rose-500/20 to-rose-500/0 ring-rose-500/30 text-rose-300",
+    Low: "from-sky-500/20 to-sky-500/0 ring-sky-500/30 text-sky-300",
+    "New Registration": "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30 text-emerald-300",
+    Reguler: "from-violet-500/20 to-violet-500/0 ring-violet-500/30 text-violet-300",
+  };
+  const groupTotals = useMemo(() => {
+    const map: Record<string, { total: number; count: number }> = {};
+    for (const g of GROUP_OPTIONS) map[g] = { total: 0, count: 0 };
+    for (const r of filtered) {
+      const raw = (r.group_tier ?? "").trim();
+      const key =
+        /vip/i.test(raw) ? "VIP" :
+        /high/i.test(raw) ? "High" :
+        /low/i.test(raw) ? "Low" :
+        /new/i.test(raw) ? "New Registration" :
+        raw ? "Reguler" : "Reguler";
+      map[key].total += Number(r.amount || 0);
+      map[key].count += 1;
+    }
+    return map;
+  }, [filtered]);
 
   const totals = useMemo(() => {
     const total = rows.length;
@@ -564,6 +589,26 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
         <StatTile index={4} tone="rose" label="Approved" value={String(totals.approved)} hint="trx" />
       </div>
 
+      {/* Group Totals */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        {GROUP_OPTIONS.map((g) => {
+          const t = groupTotals[g];
+          return (
+            <div
+              key={g}
+              className={cn(
+                "relative overflow-hidden rounded-xl bg-gradient-to-br p-4 ring-1",
+                GROUP_TONES[g],
+              )}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wider">{g}</div>
+              <div className="mt-1 text-lg font-semibold text-foreground">{rp(t.total)}</div>
+              <div className="text-[11px] text-muted-foreground">{t.count} transaksi</div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Toolbar + Table */}
       <div className="glass-panel soft-shadow rounded-xl">
         <div className="flex flex-wrap items-center gap-2 border-b border-border/60 p-3">
@@ -734,8 +779,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
-              <Input value={form.group_tier} placeholder="Nama group…"
-                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+              <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectContent>
+                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>
@@ -830,8 +879,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
-              <Input value={form.group_tier}
-                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+              <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectContent>
+                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>

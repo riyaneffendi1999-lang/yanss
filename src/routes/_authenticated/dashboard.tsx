@@ -24,6 +24,10 @@ import {
   YAxis,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from "recharts";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -95,27 +99,37 @@ function statusBadge(s: string) {
 
 // Read locally-persisted bonus totals (Lucky Spin, etc.)
 function useBonusTotals() {
-  const [state, setState] = useState({ total: 0, count: 0 });
+  const [state, setState] = useState({ total: 0, count: 0, perProgram: [] as { name: string; member: number; bonus: number }[] });
   useEffect(() => {
     const compute = () => {
+      const programs: { key: string; name: string }[] = [
+        { key: "lucky-spin/complete-rows", name: "Lucky Spin" },
+        { key: "kamis-ceria:complete", name: "Kamis Ceria" },
+        { key: "gebyar-turnover:complete", name: "Gebyar Turnover" },
+      ];
       let total = 0;
       let count = 0;
-      const keys = ["lucky-spin:complete", "kamis-ceria:complete", "gebyar-turnover:complete"];
-      for (const k of keys) {
+      const perProgram: { name: string; member: number; bonus: number }[] = [];
+      for (const p of programs) {
+        let pTotal = 0;
+        const members = new Set<string>();
         try {
-          const raw = localStorage.getItem(k);
-          if (!raw) continue;
-          const arr = JSON.parse(raw);
-          if (Array.isArray(arr)) {
-            for (const r of arr) {
-              const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
-              if (!Number.isNaN(v)) total += v;
-              count += 1;
+          const raw = localStorage.getItem(p.key);
+          if (raw) {
+            const arr = JSON.parse(raw);
+            if (Array.isArray(arr)) {
+              for (const r of arr) {
+                const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
+                if (!Number.isNaN(v)) { pTotal += v; total += v; }
+                count += 1;
+                if (r?.username) members.add(String(r.username));
+              }
             }
           }
         } catch { /* ignore */ }
+        perProgram.push({ name: p.name, bonus: pTotal, member: members.size });
       }
-      setState({ total, count });
+      setState({ total, count, perProgram });
     };
     compute();
     const onStorage = () => compute();
@@ -399,6 +413,71 @@ function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Distribusi per Metode + Rekap Program Bonus */}
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="glass-panel soft-shadow rounded-xl p-5">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold">Distribusi per Metode</h3>
+            <p className="text-xs text-muted-foreground">Proporsi transaksi tiap channel · periode terpilih</p>
+          </div>
+          <div className="h-64 w-full">
+            {channelStats.length === 0 ? (
+              <div className="grid h-full place-items-center text-xs text-muted-foreground">Belum ada data</div>
+            ) : (
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie data={channelStats} dataKey="amount" nameKey="channel" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                    {channelStats.map((_, i) => {
+                      const palette = ["#38bdf8", "#f59e0b", "#10b981", "#a78bfa", "#f43f5e", "#818cf8", "#22d3ee", "#fb7185"];
+                      return <Cell key={i} fill={palette[i % palette.length]} />;
+                    })}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmt(v)} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div className="glass-panel soft-shadow rounded-xl p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold">Rekap Program Bonus</h3>
+              <p className="text-xs text-muted-foreground">Total klaim & inject bonus seluruh program</p>
+            </div>
+            <Gift className="h-4 w-4 text-amber-300" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl bg-gradient-to-br from-sky-500/15 to-sky-500/0 p-4 ring-1 ring-sky-500/25">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-300">Total Klaim</div>
+              <div className="mt-1 text-2xl font-semibold">{bonusTotals.count}</div>
+            </div>
+            <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/0 p-4 ring-1 ring-emerald-500/25">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Total Inject Bonus</div>
+              <div className="mt-1 text-2xl font-semibold">{fmt(bonusTotals.total)}</div>
+            </div>
+          </div>
+          <ul className="mt-4 space-y-2">
+            {bonusTotals.perProgram.map((p) => (
+              <li key={p.name} className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-300">
+                    <Gift className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium">{p.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{p.member} member</p>
+                  </div>
+                </div>
+                <div className="text-sm font-semibold text-emerald-300">{fmt(p.bonus)}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
 
       {/* Recent Activity (replaces Latest Transactions) */}
       <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
