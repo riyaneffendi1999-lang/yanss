@@ -580,7 +580,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" /> Saldo Akhir
           </div>
-          <div className="text-2xl font-semibold tracking-tight text-emerald-300">{rp(Number(account?.balance ?? 0))}</div>
+          <div className="text-2xl font-semibold tracking-tight text-emerald-300">{rp(totals.computedBalance)}</div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">Saldo awal {rp(Number(account?.opening_balance ?? 0))}</div>
         </div>
       </div>
