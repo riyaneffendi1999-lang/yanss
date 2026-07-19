@@ -779,8 +779,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
-              <Input value={form.group_tier} placeholder="Nama group…"
-                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+              <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectContent>
+                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>
@@ -875,8 +879,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
             </div>
             <div className="space-y-1.5">
               <Label>Group</Label>
-              <Input value={form.group_tier}
-                onChange={(e) => setForm((f) => ({ ...f, group_tier: e.target.value }))} />
+              <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
+                <SelectTrigger><SelectValue placeholder="Pilih group…" /></SelectTrigger>
+                <SelectContent>
+                  {GROUP_OPTIONS.map((g) => (<SelectItem key={g} value={g}>{g}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2 space-y-1.5">
               <Label>Rekening</Label>
