@@ -211,6 +211,7 @@ const STATUS_STYLES: Record<DepositStatus, { pill: string; dot: string }> = {
   Pending: { pill: "bg-amber-500/15 text-amber-300 border-amber-500/30", dot: "bg-amber-400" },
   Unik: { pill: "bg-violet-500/15 text-violet-300 border-violet-500/30", dot: "bg-violet-400" },
   "Pindah dana": { pill: "bg-sky-500/15 text-sky-300 border-sky-500/30", dot: "bg-sky-400" },
+  "Cuci Pulsa": { pill: "bg-sky-500/15 text-sky-300 border-sky-500/30", dot: "bg-sky-400" },
   "Biaya admin": { pill: "bg-rose-500/15 text-rose-300 border-rose-500/30", dot: "bg-rose-400" },
 };
 
