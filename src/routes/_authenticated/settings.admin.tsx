@@ -213,14 +213,7 @@ function ManageAdminPage() {
         }
       />
 
-      {/* Summary tiles */}
-      <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-        <SummaryTile label="Total Admin" value={counts.total ?? 0} tone="from-slate-500/20 to-slate-500/5 text-slate-200" />
-        <SummaryTile label="Head" value={counts.head ?? 0} tone="from-red-500/25 to-red-500/5 text-red-300" />
-        <SummaryTile label="Supervisor" value={counts.supervisor ?? 0} tone="from-amber-500/25 to-amber-500/5 text-amber-300" />
-        <SummaryTile label="Ast. Spv" value={counts.ast_spv ?? 0} tone="from-violet-500/25 to-violet-500/5 text-violet-300" />
-        <SummaryTile label="Staff" value={counts.staff ?? 0} tone="from-sky-500/25 to-sky-500/5 text-sky-300" />
-      </div>
+      {/* summary tiles removed per request */}
 
       <div className="glass-panel soft-shadow rounded-xl">
         {/* Toolbar */}

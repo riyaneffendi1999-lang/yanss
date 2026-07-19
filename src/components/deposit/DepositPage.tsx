@@ -70,13 +70,21 @@ export type DepositStatus =
   | "Pending"
   | "Unik"
   | "Pindah dana"
+  | "Cuci Pulsa"
   | "Biaya admin";
 
-const STATUS_OPTIONS: DepositStatus[] = [
+const STATUS_OPTIONS_BANK: DepositStatus[] = [
   "Approved",
   "Pending",
   "Unik",
   "Pindah dana",
+  "Biaya admin",
+];
+const STATUS_OPTIONS_PULSA: DepositStatus[] = [
+  "Approved",
+  "Pending",
+  "Unik",
+  "Cuci Pulsa",
   "Biaya admin",
 ];
 
@@ -203,6 +211,7 @@ const STATUS_STYLES: Record<DepositStatus, { pill: string; dot: string }> = {
   Pending: { pill: "bg-amber-500/15 text-amber-300 border-amber-500/30", dot: "bg-amber-400" },
   Unik: { pill: "bg-violet-500/15 text-violet-300 border-violet-500/30", dot: "bg-violet-400" },
   "Pindah dana": { pill: "bg-sky-500/15 text-sky-300 border-sky-500/30", dot: "bg-sky-400" },
+  "Cuci Pulsa": { pill: "bg-sky-500/15 text-sky-300 border-sky-500/30", dot: "bg-sky-400" },
   "Biaya admin": { pill: "bg-rose-500/15 text-rose-300 border-rose-500/30", dot: "bg-rose-400" },
 };
 
@@ -347,7 +356,9 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   };
 
   const GROUP_OPTIONS = ["VIP", "High", "Low", "New Registration", "Reguler"] as const;
-
+  const STATUS_OPTIONS: DepositStatus[] =
+    config.kind === "pulsa" ? STATUS_OPTIONS_PULSA : STATUS_OPTIONS_BANK;
+  const OUTFLOW_STATUS: DepositStatus = config.kind === "pulsa" ? "Cuci Pulsa" : "Pindah dana";
 
   const totals = useMemo(() => {
     const scoped = accountId ? rows.filter((r) => r.account_id === accountId) : rows;
@@ -356,8 +367,25 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     const pending = scoped.filter((r) => r.status === "Pending").length;
     const totalAmount = scoped.reduce((s, r) => s + Number(r.amount), 0);
     const unik = scoped.filter((r) => r.status === "Unik").length;
-    return { total, approved, pending, totalAmount, unik };
-  }, [rows, accountId]);
+    const sumBy = (st: DepositStatus) =>
+      scoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
+    const sumApproved = sumBy("Approved");
+    const sumPending = sumBy("Pending");
+    const sumUnik = sumBy("Unik");
+    const sumOut = sumBy(OUTFLOW_STATUS);
+    const sumFee = sumBy("Biaya admin");
+    const opening = Number(account?.opening_balance ?? 0);
+    const computedBalance = opening + sumApproved + sumUnik + sumPending - sumOut - sumFee;
+    return { total, approved, pending, totalAmount, unik, computedBalance, opening };
+  }, [rows, accountId, account, OUTFLOW_STATUS]);
+
+  // Pagination — 20 rows per page
+  const PAGE_SIZE = 20;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [statusFilter, search, effFrom, effTo, accountId]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const autoIngestPaste = async (raw: string, status: DepositStatus = "Approved") => {
     if (!raw.trim()) return;
@@ -409,8 +437,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const saldoSetelah = (formAccount?.balance ?? 0) + formAmountNum;
 
   const onAddSubmit = async () => {
-    if (!form.ticket || !form.username || !form.full_name || !form.amount) {
-      return toast.error("Lengkapi tiket, username, nama, dan jumlah");
+    if (!form.amount || formAmountNum <= 0) {
+      return toast.error("Masukkan nominal jumlah deposit");
     }
     const [y, m, d] = form.iso_date.split("-");
     const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
@@ -463,8 +491,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
   const onEditSubmit = async () => {
     if (!editId) return;
-    if (!form.ticket || !form.username || !form.full_name || !form.amount) {
-      return toast.error("Lengkapi tiket, username, nama, dan jumlah");
+    if (!form.amount || formAmountNum <= 0) {
+      return toast.error("Masukkan nominal jumlah deposit");
     }
     const [y, m, d] = form.iso_date.split("-");
     const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
@@ -556,7 +584,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             <Wallet className="h-3.5 w-3.5" /> Saldo Akhir
           </div>
-          <div className="text-2xl font-semibold tracking-tight text-emerald-300">{rp(Number(account?.balance ?? 0))}</div>
+          <div className="text-2xl font-semibold tracking-tight text-emerald-300">{rp(totals.computedBalance)}</div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">Saldo awal {rp(Number(account?.opening_balance ?? 0))}</div>
         </div>
       </div>
@@ -658,7 +686,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   </td>
                 </tr>
               )}
-              {filtered.map((r) => (
+              {paged.map((r) => (
                 <tr key={r.id} className="border-t border-border/50 transition-colors hover:bg-secondary/30">
                   <td className="px-4 py-3 text-muted-foreground">{r.date_str}</td>
                   <td className="px-4 py-3 text-muted-foreground">
@@ -697,15 +725,37 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
-          <div>Menampilkan {filtered.length} dari {rows.length} transaksi</div>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
+          <div>
+            Menampilkan {paged.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}
+            –{(safePage - 1) * PAGE_SIZE + paged.length} dari {filtered.length} transaksi
+          </div>
           <div className="flex items-center gap-2">
-            <ArrowLeftRight className="h-3.5 w-3.5" />
-            <Sparkles className="h-3.5 w-3.5" />
-            Tersinkron dengan database
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage <= 1}
+            >
+              Sebelumnya
+            </Button>
+            <span className="tabular-nums">
+              Hal {safePage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage >= totalPages}
+            >
+              Berikutnya
+            </Button>
           </div>
         </div>
       </div>
+
 
       {/* Add dialog — matches reference layout */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>

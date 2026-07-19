@@ -44,6 +44,12 @@ const channelMeta: Record<Channel, { label: string; icon: React.ComponentType<{ 
   pulsa: { label: "Pulsa", icon: Smartphone, tone: "bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/20" },
 };
 
+const CHANNEL_NAMES: Record<Channel, string[]> = {
+  bank: ["BCA", "BNI", "BRI", "MANDIRI"],
+  emoney: ["DANA", "OVO", "GOPAY", "LINKAJA"],
+  pulsa: ["TELKOMSEL", "XL"],
+};
+
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
 const emptyForm = () => ({
   channel_kind: "bank" as Channel,
@@ -266,7 +272,12 @@ function ManageBankPage() {
           <DialogHeader><DialogTitle>{editing ? "Edit Metode" : "Tambah Metode"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Channel">
-              <Select value={form.channel_kind} onValueChange={(v) => setForm({ ...form, channel_kind: v as Channel })}>
+              <Select
+                value={form.channel_kind}
+                onValueChange={(v) =>
+                  setForm({ ...form, channel_kind: v as Channel, channel_name: "" })
+                }
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bank">Bank</SelectItem>
@@ -275,12 +286,23 @@ function ManageBankPage() {
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Nama Bank"><Input value={form.channel_name} onChange={(e) => setForm({ ...form, channel_name: e.target.value.toUpperCase() })} /></Field>
+            <Field label="Nama Bank">
+              <Select
+                value={form.channel_name}
+                onValueChange={(v) => setForm({ ...form, channel_name: v })}
+              >
+                <SelectTrigger><SelectValue placeholder={`Pilih ${channelMeta[form.channel_kind].label}…`} /></SelectTrigger>
+                <SelectContent>
+                  {CHANNEL_NAMES[form.channel_kind].map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
             <Field label="Kode"><Input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} /></Field>
             <Field label="Atas Nama"><Input value={form.account_name} onChange={(e) => setForm({ ...form, account_name: e.target.value })} /></Field>
             <Field label="Nomor Rekening" className="col-span-2"><Input value={form.account_number} onChange={(e) => setForm({ ...form, account_number: e.target.value })} /></Field>
-            <Field label="Saldo Awal"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value), balance: Number(e.target.value) })} /></Field>
-            <Field label="Limit Harian"><Input type="number" value={form.daily_limit} onChange={(e) => setForm({ ...form, daily_limit: Number(e.target.value) })} /></Field>
+            <Field label="Saldo Awal" className="col-span-2"><Input type="number" value={form.opening_balance} onChange={(e) => setForm({ ...form, opening_balance: Number(e.target.value), balance: Number(e.target.value) })} /></Field>
             <div className="col-span-2 flex items-center justify-between rounded-md border p-3">
               <div>
                 <p className="text-sm font-medium">Status Online</p>
