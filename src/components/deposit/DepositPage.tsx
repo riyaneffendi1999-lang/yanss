@@ -6,7 +6,6 @@ import {
   Plus,
   Search,
   ClipboardPaste,
-  Calendar,
   Filter,
   Trash2,
   Wallet,
