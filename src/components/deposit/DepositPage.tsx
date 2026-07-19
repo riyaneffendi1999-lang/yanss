@@ -252,9 +252,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   }, [bankAccounts, accountId]);
   const account = bankAccounts.find((a) => a.id === accountId);
 
-  const [datePreset, setDatePreset] = useState<"today" | "yesterday" | "7d" | "30d" | "custom">("30d");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "current_month", from: "", to: "" });
   const [statusFilter, setStatusFilter] = useState<"all" | DepositStatus>("all");
   const [search, setSearch] = useState("");
   const [pasteData, setPasteData] = useState("");
