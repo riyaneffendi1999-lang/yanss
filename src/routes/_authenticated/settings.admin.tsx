@@ -6,18 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import {
-  Crown,
-  Eye,
-  EyeOff,
-  Loader2,
-  Pencil,
-  Plus,
-  Search,
-  ShieldCheck,
-  Trash2,
-  UserPlus,
-} from "lucide-react";
+import { Crown, Eye, EyeOff, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -32,21 +21,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
@@ -59,22 +35,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import {
-  createAdmin,
-  deleteAdmin,
-  listAdmins,
-  updateAdmin,
-} from "@/lib/admin.functions";
+import { createAdmin, deleteAdmin, listAdmins, updateAdmin } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/admin")({
   head: () => ({ meta: [{ title: "Manage Admin — Admin Console" }] }),
   component: ManageAdminPage,
 });
 
-const ROLE_META: Record<
-  string,
-  { label: string; className: string; icon?: typeof Crown }
-> = {
+const ROLE_META: Record<string, { label: string; className: string; icon?: typeof Crown }> = {
   head: { label: "Head", className: "bg-red-500/15 text-red-400 border-red-500/30", icon: Crown },
   supervisor: {
     label: "Supervisor",
@@ -223,7 +191,7 @@ function ManageAdminPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Cari username, nama, atau email…"
+              placeholder="Cari username.."
               className="pl-8"
             />
           </div>
@@ -281,9 +249,7 @@ function ManageAdminPage() {
                   <TableRow key={r.id}>
                     <TableCell>
                       <div className="font-medium">{r.username}</div>
-                      {r.full_name && (
-                        <div className="text-[11px] text-muted-foreground">{r.full_name}</div>
-                      )}
+                      {r.full_name && <div className="text-[11px] text-muted-foreground">{r.full_name}</div>}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -297,11 +263,7 @@ function ManageAdminPage() {
                             };
                             const Icon = meta.icon;
                             return (
-                              <Badge
-                                key={role}
-                                variant="outline"
-                                className={`gap-1 ${meta.className}`}
-                              >
+                              <Badge key={role} variant="outline" className={`gap-1 ${meta.className}`}>
                                 {Icon && <Icon className="h-3 w-3" />}
                                 {meta.label}
                               </Badge>
@@ -313,27 +275,18 @@ function ManageAdminPage() {
                     <TableCell>
                       <Switch
                         checked={r.is_active}
-                        onCheckedChange={(v) =>
-                          updateMut.mutate({ id: r.id, is_active: v })
-                        }
+                        onCheckedChange={(v) => updateMut.mutate({ id: r.id, is_active: v })}
                       />
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {r.last_sign_in_at
-                        ? new Date(r.last_sign_in_at).toLocaleString("id-ID")
-                        : "—"}
+                      {r.last_sign_in_at ? new Date(r.last_sign_in_at).toLocaleString("id-ID") : "—"}
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {new Date(r.created_at).toLocaleDateString("id-ID")}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => setEditRow(r)}
-                          aria-label="Ubah"
-                        >
+                        <Button size="icon" variant="ghost" onClick={() => setEditRow(r)} aria-label="Ubah">
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -382,8 +335,7 @@ function ManageAdminPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Hapus admin?</AlertDialogTitle>
             <AlertDialogDescription>
-              Akun <b>{deleteRow?.username}</b> akan dihapus permanen. Tindakan ini tidak dapat
-              dibatalkan.
+              Akun <b>{deleteRow?.username}</b> akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -402,19 +354,9 @@ function ManageAdminPage() {
   );
 }
 
-function SummaryTile({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: string;
-}) {
+function SummaryTile({ label, value, tone }: { label: string; value: number; tone: string }) {
   return (
-    <div
-      className={`rounded-xl border border-border/60 bg-gradient-to-br ${tone} p-3`}
-    >
+    <div className={`rounded-xl border border-border/60 bg-gradient-to-br ${tone} p-3`}>
       <div className="text-xs uppercase tracking-wider opacity-80">{label}</div>
       <div className="mt-1 text-2xl font-semibold">{value}</div>
     </div>
@@ -463,10 +405,7 @@ function CreateDialog({
             <PasswordInput placeholder="min. 6 karakter" {...form.register("password")} />
           </Field>
           <Field label="Role" error={form.formState.errors.role?.message}>
-            <Select
-              value={form.watch("role")}
-              onValueChange={(v) => form.setValue("role", v as CreateValues["role"])}
-            >
+            <Select value={form.watch("role")} onValueChange={(v) => form.setValue("role", v as CreateValues["role"])}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -506,8 +445,7 @@ function EditDialog({
   loading: boolean;
 }) {
   const currentRole =
-    (row?.roles.find((r) => ROLE_OPTIONS.some((o) => o.value === r)) as EditValues["role"]) ??
-    "staff";
+    (row?.roles.find((r) => ROLE_OPTIONS.some((o) => o.value === r)) as EditValues["role"]) ?? "staff";
 
   const form = useForm<EditValues>({
     resolver: zodResolver(editFormSchema),
@@ -534,10 +472,7 @@ function EditDialog({
             <Input {...form.register("full_name")} />
           </Field>
           <Field label="Role" error={form.formState.errors.role?.message}>
-            <Select
-              value={form.watch("role")}
-              onValueChange={(v) => form.setValue("role", v as EditValues["role"])}
-            >
+            <Select value={form.watch("role")} onValueChange={(v) => form.setValue("role", v as EditValues["role"])}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -550,14 +485,8 @@ function EditDialog({
               </SelectContent>
             </Select>
           </Field>
-          <Field
-            label="Reset Password (opsional)"
-            error={form.formState.errors.password?.message}
-          >
-            <PasswordInput
-              placeholder="Kosongkan bila tidak diubah"
-              {...form.register("password")}
-            />
+          <Field label="Reset Password (opsional)" error={form.formState.errors.password?.message}>
+            <PasswordInput placeholder="Kosongkan bila tidak diubah" {...form.register("password")} />
           </Field>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
@@ -574,15 +503,7 @@ function EditDialog({
   );
 }
 
-function Field({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
@@ -592,23 +513,22 @@ function Field({
   );
 }
 
-const PasswordInput = React.forwardRef<
-  HTMLInputElement,
-  React.InputHTMLAttributes<HTMLInputElement>
->(function PasswordInput(props, ref) {
-  const [show, setShow] = useState(false);
-  return (
-    <div className="relative">
-      <Input ref={ref} type={show ? "text" : "password"} className="pr-9" {...props} />
-      <button
-        type="button"
-        onClick={() => setShow((s) => !s)}
-        tabIndex={-1}
-        aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-      >
-        {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-      </button>
-    </div>
-  );
-});
+const PasswordInput = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  function PasswordInput(props, ref) {
+    const [show, setShow] = useState(false);
+    return (
+      <div className="relative">
+        <Input ref={ref} type={show ? "text" : "password"} className="pr-9" {...props} />
+        <button
+          type="button"
+          onClick={() => setShow((s) => !s)}
+          tabIndex={-1}
+          aria-label={show ? "Sembunyikan password" : "Tampilkan password"}
+          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
+        >
+          {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </button>
+      </div>
+    );
+  },
+);

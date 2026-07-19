@@ -337,7 +337,7 @@ function LuckySpinPage() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  placeholder="Cari username / tiket..."
+                  placeholder="Cari username.."
                   className="h-9 w-56 bg-background/60 pl-9"
                 />
               </div>

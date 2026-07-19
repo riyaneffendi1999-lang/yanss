@@ -725,7 +725,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari nama / username / tiket..."
+                placeholder="Cari username.."
                 className="h-9 w-[260px] bg-secondary/40 pl-8"
               />
             </div>
@@ -862,7 +862,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Label>Tiket</Label>
               <Input
                 value={form.ticket}
-                placeholder="Nomor tiket…"
+                placeholder="Tiket"
                 onChange={(e) => setForm((f) => ({ ...f, ticket: e.target.value }))}
               />
             </div>
@@ -870,7 +870,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Label>Username</Label>
               <Input
                 value={form.username}
-                placeholder="Username member…"
+                placeholder="Username"
                 onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
               />
             </div>
@@ -878,7 +878,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Label>Nama Lengkap</Label>
               <Input
                 value={form.full_name}
-                placeholder="Nama lengkap member…"
+                placeholder="Nama lengkap"
                 onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
               />
             </div>
@@ -886,7 +886,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Label>Group</Label>
               <Select value={form.group_tier} onValueChange={(v) => setForm((f) => ({ ...f, group_tier: v }))}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Pilih group…" />
+                  <SelectValue placeholder="Group" />
                 </SelectTrigger>
                 <SelectContent>
                   {GROUP_OPTIONS.map((g) => (
@@ -951,7 +951,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
               <Input
                 inputMode="numeric"
                 value={form.amount}
-                placeholder="50.000"
+                placeholder="0"
                 onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
               />
             </div>
