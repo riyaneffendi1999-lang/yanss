@@ -433,8 +433,8 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const saldoSetelah = (formAccount?.balance ?? 0) + formAmountNum;
 
   const onAddSubmit = async () => {
-    if (!form.ticket || !form.username || !form.full_name || !form.amount) {
-      return toast.error("Lengkapi tiket, username, nama, dan jumlah");
+    if (!form.amount || formAmountNum <= 0) {
+      return toast.error("Masukkan nominal jumlah deposit");
     }
     const [y, m, d] = form.iso_date.split("-");
     const dateStr = `${parseInt(d)}/${parseInt(m)}/${y}`;
