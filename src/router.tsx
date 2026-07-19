@@ -9,6 +9,9 @@ export const getRouter = () => {
         staleTime: 60_000,
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
+        refetchOnMount: false,
+        refetchOnReconnect: false,
+        retry: 1,
       },
     },
   });
@@ -18,7 +21,10 @@ export const getRouter = () => {
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: "intent",
-    defaultPreloadStaleTime: 0,
+    defaultPreloadDelay: 30,
+    defaultPreloadStaleTime: 30_000,
+    defaultPendingMs: 200,
+    defaultPendingMinMs: 0,
   });
 
   return router;
