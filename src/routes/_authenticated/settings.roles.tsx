@@ -1,6 +1,5 @@
-import { Fragment } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
 import { Shield, Save, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -16,40 +15,52 @@ export const Route = createFileRoute("/_authenticated/settings/roles")({
 });
 
 type RoleKey = "head" | "supervisor" | "ast_spv" | "staff";
-type Perm = { key: string; label: string; group: string };
+type Page = { key: string; label: string; group: string };
 
 const roles: { key: RoleKey; label: string; tone: string; desc: string }[] = [
-  { key: "head", label: "Head", tone: "bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20", desc: "Akses penuh, kelola semua role" },
-  { key: "supervisor", label: "Supervisor", tone: "bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20", desc: "Kelola tim & approval besar" },
-  { key: "ast_spv", label: "Ast. Spv", tone: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20", desc: "Bantu supervisor, approval sedang" },
+  { key: "head", label: "Head", tone: "bg-red-500/10 text-red-600 dark:text-red-300 border-red-500/20", desc: "Akses semua halaman" },
+  { key: "supervisor", label: "Supervisor", tone: "bg-amber-500/10 text-amber-600 dark:text-amber-300 border-amber-500/20", desc: "Kelola tim & approval" },
+  { key: "ast_spv", label: "Ast. Spv", tone: "bg-blue-500/10 text-blue-600 dark:text-blue-300 border-blue-500/20", desc: "Bantu supervisor" },
   { key: "staff", label: "Staff", tone: "bg-slate-500/10 text-slate-600 dark:text-slate-300 border-slate-500/20", desc: "Operasional harian" },
 ];
 
-const permissions: Perm[] = [
-  { group: "Dashboard", key: "dashboard.view", label: "Lihat Dashboard" },
-  { group: "Deposit", key: "deposit.view", label: "Lihat Transaksi" },
-  { group: "Deposit", key: "deposit.create", label: "Input Transaksi" },
-  { group: "Deposit", key: "deposit.approve", label: "Approve" },
-  { group: "Deposit", key: "deposit.reject", label: "Reject" },
-  { group: "Deposit", key: "deposit.export", label: "Export Data" },
-  { group: "Bonus", key: "bonus.view", label: "Lihat Bonus" },
-  { group: "Bonus", key: "bonus.inject", label: "Inject Bonus" },
-  { group: "Bank", key: "bank.view", label: "Lihat Bank" },
-  { group: "Bank", key: "bank.manage", label: "CRUD Bank" },
-  { group: "Bank", key: "bank.toggle", label: "Toggle Online/Offline" },
-  { group: "Admin", key: "admin.view", label: "Lihat Daftar Admin" },
-  { group: "Admin", key: "admin.manage", label: "Tambah/Ubah/Hapus Admin" },
-  { group: "Role", key: "role.manage", label: "Kelola Role & Akses" },
-  { group: "Report", key: "report.view", label: "Lihat Report" },
-  { group: "Settings", key: "settings.general", label: "Settings Umum" },
-  { group: "Settings", key: "settings.security", label: "Settings Keamanan" },
+// Halaman = item sidebar
+const pages: Page[] = [
+  { group: "Utama", key: "/dashboard", label: "Dashboard" },
+
+  { group: "Deposit Bank", key: "/deposit/bank/bca", label: "BCA" },
+  { group: "Deposit Bank", key: "/deposit/bank/bni", label: "BNI" },
+  { group: "Deposit Bank", key: "/deposit/bank/bri", label: "BRI" },
+  { group: "Deposit Bank", key: "/deposit/bank/mandiri", label: "MANDIRI" },
+
+  { group: "Deposit E-money", key: "/deposit/emoney/dana", label: "DANA" },
+  { group: "Deposit E-money", key: "/deposit/emoney/ovo", label: "OVO" },
+  { group: "Deposit E-money", key: "/deposit/emoney/gopay", label: "GOPAY" },
+  { group: "Deposit E-money", key: "/deposit/emoney/linkaja", label: "LINKAJA" },
+
+  { group: "Deposit Pulsa", key: "/deposit/pulsa/telkomsel", label: "TELKOMSEL" },
+  { group: "Deposit Pulsa", key: "/deposit/pulsa/xl", label: "XL" },
+
+  { group: "Bonus Adjustment", key: "/bonus/lucky-spin", label: "Lucky Spin" },
+  { group: "Bonus Adjustment", key: "/bonus/kamis-ceria", label: "Kamis Ceria" },
+  { group: "Bonus Adjustment", key: "/bonus/gebyar-turnover", label: "Gebyar Turnover" },
+
+  { group: "Settings", key: "/settings/admin", label: "Manage Admin" },
+  { group: "Settings", key: "/settings/bank", label: "Manage Bank" },
+  { group: "Settings", key: "/settings/roles", label: "Role & Akses" },
+
+  { group: "Akun", key: "/profile", label: "Profile" },
 ];
 
+const allKeys = pages.map((p) => p.key);
+const depositKeys = pages.filter((p) => p.group.startsWith("Deposit")).map((p) => p.key);
+const bonusKeys = pages.filter((p) => p.group === "Bonus Adjustment").map((p) => p.key);
+
 const defaults: Record<RoleKey, string[]> = {
-  head: permissions.map((p) => p.key),
-  supervisor: permissions.filter((p) => !["role.manage", "admin.manage", "settings.security"].includes(p.key)).map((p) => p.key),
-  ast_spv: ["dashboard.view", "deposit.view", "deposit.create", "deposit.approve", "deposit.reject", "deposit.export", "bonus.view", "bonus.inject", "bank.view", "bank.toggle", "admin.view", "report.view"],
-  staff: ["dashboard.view", "deposit.view", "deposit.create", "bonus.view", "bank.view", "report.view"],
+  head: allKeys,
+  supervisor: allKeys.filter((k) => k !== "/settings/roles" && k !== "/settings/admin"),
+  ast_spv: ["/dashboard", ...depositKeys, ...bonusKeys, "/settings/bank", "/profile"],
+  staff: ["/dashboard", ...depositKeys, ...bonusKeys, "/profile"],
 };
 
 function RolesPage() {
@@ -61,8 +72,8 @@ function RolesPage() {
   }));
 
   const grouped = useMemo(() => {
-    const g: Record<string, Perm[]> = {};
-    permissions.forEach((p) => { (g[p.group] ??= []).push(p); });
+    const g: Record<string, Page[]> = {};
+    pages.forEach((p) => { (g[p.group] ??= []).push(p); });
     return g;
   }, []);
 
@@ -75,6 +86,15 @@ function RolesPage() {
     });
   }
 
+  function toggleGroup(role: RoleKey, groupPages: Page[], checked: boolean) {
+    if (role === "head") { toast.info("Head selalu memiliki akses penuh"); return; }
+    setMatrix((prev) => {
+      const next = { ...prev, [role]: new Set(prev[role]) };
+      groupPages.forEach((p) => { if (checked) next[role].add(p.key); else next[role].delete(p.key); });
+      return next;
+    });
+  }
+
   function reset() {
     setMatrix({
       head: new Set(defaults.head),
@@ -82,9 +102,9 @@ function RolesPage() {
       ast_spv: new Set(defaults.ast_spv),
       staff: new Set(defaults.staff),
     });
-    toast.success("Matriks di-reset ke default");
+    toast.success("Akses di-reset ke default");
   }
-  function save() { toast.success("Perubahan role & akses disimpan"); }
+  function save() { toast.success("Akses halaman disimpan"); }
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -93,7 +113,7 @@ function RolesPage() {
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <Shield className="h-6 w-6 text-primary" /> Role & Akses
           </h1>
-          <p className="text-sm text-muted-foreground">Atur permission untuk setiap role. Head selalu memiliki akses penuh.</p>
+          <p className="text-sm text-muted-foreground">Atur halaman sidebar yang dapat diakses tiap role. Head selalu punya akses semua halaman.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={reset}><RotateCcw className="mr-2 h-4 w-4" /> Reset Default</Button>
@@ -107,33 +127,51 @@ function RolesPage() {
             <CardContent className="p-4">
               <Badge variant="outline" className={r.tone}>{r.label}</Badge>
               <p className="mt-2 text-xs text-muted-foreground">{r.desc}</p>
-              <p className="mt-2 text-2xl font-semibold">{matrix[r.key].size}<span className="ml-1 text-xs text-muted-foreground">/ {permissions.length} akses</span></p>
+              <p className="mt-2 text-2xl font-semibold">
+                {matrix[r.key].size}
+                <span className="ml-1 text-xs text-muted-foreground">/ {pages.length} halaman</span>
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Matriks Permission</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Akses Halaman Sidebar</CardTitle></CardHeader>
         <CardContent className="overflow-x-auto p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[280px]">Permission</TableHead>
+                <TableHead className="w-[280px]">Halaman</TableHead>
                 {roles.map((r) => (
                   <TableHead key={r.key} className="text-center">{r.label}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {Object.entries(grouped).map(([group, perms]) => (
+              {Object.entries(grouped).map(([group, groupPages]) => (
                 <Fragment key={group}>
                   <TableRow className="bg-muted/40 hover:bg-muted/40">
-                    <TableCell colSpan={roles.length + 1} className="py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <TableCell className="py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       {group}
                     </TableCell>
+                    {roles.map((r) => {
+                      const total = groupPages.length;
+                      const active = groupPages.filter((p) => matrix[r.key].has(p.key)).length;
+                      const all = active === total;
+                      return (
+                        <TableCell key={r.key} className="text-center">
+                          <Checkbox
+                            checked={all ? true : active > 0 ? "indeterminate" : false}
+                            disabled={r.key === "head"}
+                            onCheckedChange={(v) => toggleGroup(r.key, groupPages, Boolean(v))}
+                            aria-label={`Toggle grup ${group} untuk ${r.label}`}
+                          />
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
-                  {perms.map((p) => (
+                  {groupPages.map((p) => (
                     <TableRow key={p.key}>
                       <TableCell>
                         <div className="font-medium">{p.label}</div>
