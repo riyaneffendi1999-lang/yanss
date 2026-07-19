@@ -31,11 +31,16 @@ export function Topbar() {
   }, []);
 
   async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    toast.success("Berhasil logout");
-    navigate({ to: "/auth", replace: true });
+    try {
+      await qc.cancelQueries();
+      navigate({ to: "/auth", replace: true });
+      await supabase.auth.signOut();
+      qc.clear();
+      toast.success("Berhasil logout");
+    } catch (err) {
+      console.error("signOut error", err);
+      toast.error("Gagal logout, coba lagi");
+    }
   }
 
   return (
