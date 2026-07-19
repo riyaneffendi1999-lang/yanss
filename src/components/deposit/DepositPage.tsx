@@ -686,7 +686,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                   </td>
                 </tr>
               )}
-              {filtered.map((r) => (
+              {paged.map((r) => (
                 <tr key={r.id} className="border-t border-border/50 transition-colors hover:bg-secondary/30">
                   <td className="px-4 py-3 text-muted-foreground">{r.date_str}</td>
                   <td className="px-4 py-3 text-muted-foreground">
