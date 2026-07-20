@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,6 +46,7 @@ export function Topbar() {
 
   return (
     <div className="flex flex-1 items-center gap-3">
+      <SidebarTrigger className="text-foreground" />
       <div className="ml-auto flex items-center gap-1.5">
         <ThemeToggle />
         <Button
