@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Crown, Eye, EyeOff, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
