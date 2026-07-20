@@ -84,9 +84,7 @@ async function listAdminsFromClient(): Promise<AdminRow[]> {
     .order("created_at", { ascending: false });
   if (pErr) throw pErr;
 
-  const { data: roles, error: rErr } = await supabase
-    .from("user_roles")
-    .select("user_id, role");
+  const { data: roles, error: rErr } = await supabase.from("user_roles").select("user_id, role");
   if (rErr) throw rErr;
 
   const rolesByUser = new Map<string, string[]>();
@@ -178,10 +176,7 @@ function ManageAdminPage() {
       if (roleFilter !== "all" && !r.roles.includes(roleFilter)) return false;
       if (!search.trim()) return true;
       const q = search.toLowerCase();
-      return (
-        r.username.toLowerCase().includes(q) ||
-        (r.full_name ?? "").toLowerCase().includes(q)
-      );
+      return r.username.toLowerCase().includes(q) || (r.full_name ?? "").toLowerCase().includes(q);
     });
   }, [data, search, roleFilter]);
 
@@ -467,13 +462,13 @@ function CreateDialog({
         </DialogHeader>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
           <Field label="Username" error={form.formState.errors.username?.message}>
-            <Input placeholder="mis. andi" {...form.register("username")} />
+            <Input placeholder="admin" {...form.register("username")} />
           </Field>
           <Field label="Nama Lengkap" error={form.formState.errors.full_name?.message}>
-            <Input placeholder="Nama tampilan" {...form.register("full_name")} />
+            <Input placeholder=" " {...form.register("full_name")} />
           </Field>
           <Field label="Password" error={form.formState.errors.password?.message}>
-            <PasswordInput placeholder="min. 6 karakter" {...form.register("password")} />
+            <PasswordInput placeholder=" " {...form.register("password")} />
           </Field>
           <Field label="Role" error={form.formState.errors.role?.message}>
             <Select value={form.watch("role")} onValueChange={(v) => form.setValue("role", v as CreateValues["role"])}>
