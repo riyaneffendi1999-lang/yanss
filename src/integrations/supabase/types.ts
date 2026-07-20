@@ -17,33 +17,39 @@ export type Database = {
       activity_logs: {
         Row: {
           action: string
+          actor_name: string | null
           created_at: string
           entity: string | null
           entity_id: string | null
           id: string
           ip_address: string | null
+          meta: Json | null
           metadata: Json | null
           user_agent: string | null
           user_id: string | null
         }
         Insert: {
           action: string
+          actor_name?: string | null
           created_at?: string
           entity?: string | null
           entity_id?: string | null
           id?: string
           ip_address?: string | null
+          meta?: Json | null
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
+          actor_name?: string | null
           created_at?: string
           entity?: string | null
           entity_id?: string | null
           id?: string
           ip_address?: string | null
+          meta?: Json | null
           metadata?: Json | null
           user_agent?: string | null
           user_id?: string | null
