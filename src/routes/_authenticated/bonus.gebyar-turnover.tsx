@@ -376,7 +376,7 @@ function GebyarTurnoverPage() {
                   ))}
                 </tbody>
               </table>
-              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={state.claims.length} />
+              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={filteredClaims.length} />
             </div>
           )}
         </section>
