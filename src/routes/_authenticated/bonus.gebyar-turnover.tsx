@@ -252,7 +252,11 @@ function GebyarTurnoverPage() {
 
   return (
     <div>
-      <PageHeader title="Gebyar Turnover" description="Data kiri = input baru • Data kanan = sudah Claim" />
+      <PageHeader
+        title="Gebyar Turnover"
+        description="Data kiri = input baru • Data kanan = sudah Claim"
+        actions={<RefreshButton queryKeys={[QK]} />}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2 items-start">
         {/* LEFT — Input */}
