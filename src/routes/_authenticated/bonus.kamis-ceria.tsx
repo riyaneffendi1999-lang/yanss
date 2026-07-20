@@ -31,6 +31,11 @@ const QK = ["kamis-ceria-claims"] as const;
 
 function KamisCeriaPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
+  const askDelete = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus klaim ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    if (ok) delMut.mutate(id);
+  };
   const [username, setUsername] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
