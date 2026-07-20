@@ -43,8 +43,18 @@ type EntryRow = ParsedRow & {
 };
 
 const MONTHS = [
-  "Januari","Februari","Maret","April","Mei","Juni",
-  "Juli","Agustus","September","Oktober","November","Desember",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
 const PAGE_SIZE = 10;
@@ -55,7 +65,10 @@ const num = (n: number) => n.toLocaleString("id-ID");
 
 export function parseGebyarPaste(text: string): ParsedRow[] {
   const out: ParsedRow[] = [];
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   const lineRe = /^([A-Za-z][A-Za-z0-9_.-]*)\s+([\d,]+(?:\.\d+)?)\s+(.+)$/;
   let matchedAny = false;
@@ -125,7 +138,8 @@ function GebyarTurnoverPage() {
     [allRows, periodMonth, periodYear],
   );
   const claimRows = useMemo(
-    () => allRows.filter((r) => r.status === "claimed" && r.period_month === periodMonth && r.period_year === periodYear),
+    () =>
+      allRows.filter((r) => r.status === "claimed" && r.period_month === periodMonth && r.period_year === periodYear),
     [allRows, periodMonth, periodYear],
   );
 
@@ -429,9 +443,7 @@ function GebyarTurnoverPage() {
             <Textarea
               value={paste}
               onChange={(e) => setPaste(e.target.value)}
-              placeholder={
-                "noni777\t33,331,437,000\tIPHONE 16 PRO MAX (256 GB)\nmemori88\t9,379,244,800\tRp 10.000.000\nrtanto88\t8,257,596,000\tRp 10.000.000"
-              }
+              placeholder={"Paste data di sini"}
               rows={10}
               className="bg-secondary/40 font-mono text-xs"
               autoFocus
