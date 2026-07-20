@@ -321,9 +321,12 @@ function GebyarTurnoverPage() {
 
         {/* RIGHT — Claim */}
         <section className="glass-panel soft-shadow rounded-xl">
-          <div className="border-b border-border/60 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Data Claim
+            </div>
+            <div className="text-[11px] font-medium text-muted-foreground">
+              Periode: <span className="text-foreground">{MONTHS[state.period_month - 1]} {state.period_year}</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 p-4">
@@ -331,9 +334,9 @@ function GebyarTurnoverPage() {
             <MiniStat tone="emerald" label="Total Claim Hadiah" value={rp(claimTotals.bonus)} icon={<Trophy className="h-4 w-4" />} />
           </div>
 
-          {state.claims.length === 0 ? (
+          {filteredClaims.length === 0 ? (
             <div className="border-t border-border/60 p-10 text-center text-sm text-muted-foreground">
-              Belum ada claim
+              Belum ada claim untuk periode ini
             </div>
           ) : (
             <div className="overflow-x-auto border-t border-border/60">
