@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/settings/bank")({
   head: () => ({ meta: [{ title: "Manage Bank — Admin Console" }] }),
