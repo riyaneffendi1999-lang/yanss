@@ -111,6 +111,23 @@ async function listAdminsFromClient(): Promise<AdminRow[]> {
   });
 }
 
+async function getFreshAuthToken() {
+  const { data } = await supabase.auth.getSession();
+  let session = data.session;
+  const now = Math.floor(Date.now() / 1000);
+
+  if (session?.expires_at && session.expires_at <= now + 60) {
+    const refreshed = await supabase.auth.refreshSession();
+    session = refreshed.data.session ?? session;
+  }
+
+  if (!session?.access_token) {
+    throw new Error("Sesi login tidak ditemukan. Silakan logout lalu login ulang.");
+  }
+
+  return session.access_token;
+}
+
 const createFormSchema = z.object({
   username: z
     .string()
@@ -147,7 +164,8 @@ function ManageAdminPage() {
     queryKey: ["admins"],
     queryFn: async () => {
       try {
-        return await listFn();
+        const authToken = await getFreshAuthToken();
+        return await listFn({ data: { authToken } });
       } catch {
         return listAdminsFromClient();
       }
@@ -174,7 +192,10 @@ function ManageAdminPage() {
   }, [data]);
 
   const createMut = useMutation({
-    mutationFn: (v: CreateValues) => createFn({ data: v }),
+    mutationFn: async (v: CreateValues) => {
+      const authToken = await getFreshAuthToken();
+      return createFn({ data: { ...v, authToken } });
+    },
     onSuccess: () => {
       toast.success("Admin berhasil dibuat");
       setOpenCreate(false);
@@ -184,13 +205,16 @@ function ManageAdminPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: (v: {
+    mutationFn: async (v: {
       id: string;
       full_name?: string;
       role?: "head" | "supervisor" | "ast_spv" | "staff";
       is_active?: boolean;
       password?: string;
-    }) => updateFn({ data: v }),
+    }) => {
+      const authToken = await getFreshAuthToken();
+      return updateFn({ data: { ...v, authToken } });
+    },
     onSuccess: () => {
       toast.success("Admin diperbarui");
       setEditRow(null);
@@ -200,7 +224,10 @@ function ManageAdminPage() {
   });
 
   const deleteMut = useMutation({
-    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    mutationFn: async (id: string) => {
+      const authToken = await getFreshAuthToken();
+      return deleteFn({ data: { id, authToken } });
+    },
     onSuccess: () => {
       toast.success("Admin dihapus");
       setDeleteRow(null);
