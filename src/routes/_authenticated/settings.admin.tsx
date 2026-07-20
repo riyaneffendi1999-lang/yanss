@@ -149,11 +149,7 @@ function ManageAdminPage() {
       try {
         return await listFn();
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        if (message.toLowerCase().includes("unauthorized")) {
-          return listAdminsFromClient();
-        }
-        throw err;
+        return listAdminsFromClient();
       }
     },
   });
