@@ -57,7 +57,7 @@ function LuckySpinPage() {
   const qc = useQueryClient();
   const confirmDelete = useConfirmDelete();
   const askDelete = async (id: string) => {
-    const ok = await confirmDelete({ title: "Hapus data ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    const ok = await confirmDelete({ title: "Hapus username ini?", description: "Yakin untuk hapus?." });
     if (ok) deleteMut.mutate(id);
   };
   const [pasteValue, setPasteValue] = useState("");
@@ -81,7 +81,11 @@ function LuckySpinPage() {
   });
 
   const inputRows = useMemo(
-    () => rows.filter((r) => r.status === "input").slice().reverse(),
+    () =>
+      rows
+        .filter((r) => r.status === "input")
+        .slice()
+        .reverse(),
     [rows],
   );
   const completeRows = useMemo(() => rows.filter((r) => r.status === "complete"), [rows]);
@@ -306,9 +310,7 @@ function LuckySpinPage() {
                       <td className="px-3 py-2.5">
                         <Input
                           value={getDraft(row, "bonus")}
-                          onChange={(e) =>
-                            setDraft(row.id, "bonus", e.target.value.replace(/[^\d.,]/g, ""))
-                          }
+                          onChange={(e) => setDraft(row.id, "bonus", e.target.value.replace(/[^\d.,]/g, ""))}
                           onBlur={() => commitDraft(row)}
                           placeholder="Nominal"
                           className="h-9 bg-background/40"
