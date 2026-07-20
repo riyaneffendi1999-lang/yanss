@@ -109,7 +109,7 @@ export function AppSidebar() {
         <div className="flex flex-col items-center gap-2 px-2 py-4">
           <Link to="/dashboard" className="block">
             <img
-              src={logoAsset.url}
+              src={logoUrl}
               alt="MAXSLOT88"
               className="h-16 w-auto object-contain drop-shadow-lg transition-transform hover:scale-105"
             />
