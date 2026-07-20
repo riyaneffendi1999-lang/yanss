@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardPaste, Plus, Trash2, Trophy, Users, Gift, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClipboardPaste, Plus, Trash2, Trophy, Users, Gift, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/bonus/gebyar-turnover")({
   head: () => ({ meta: [{ title: "Gebyar Turnover — Admin Console" }] }),
@@ -109,6 +110,7 @@ export function parseGebyarPaste(text: string): ParsedRow[] {
 
 function GebyarTurnoverPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
   const now = new Date();
   const [periodMonth, setPeriodMonth] = useState(now.getMonth() + 1);
   const [periodYear, setPeriodYear] = useState(now.getFullYear());
@@ -116,6 +118,7 @@ function GebyarTurnoverPage() {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [inputPage, setInputPage] = useState(1);
   const [claimPage, setClaimPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const { data: allRows = [] } = useQuery({
     queryKey: QK,
@@ -133,10 +136,16 @@ function GebyarTurnoverPage() {
     },
   });
 
-  const inputRows = useMemo(
-    () => allRows.filter((r) => r.status === "input" && r.period_month === periodMonth && r.period_year === periodYear),
-    [allRows, periodMonth, periodYear],
-  );
+  const inputRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allRows.filter(
+      (r) =>
+        r.status === "input" &&
+        r.period_month === periodMonth &&
+        r.period_year === periodYear &&
+        (q === "" || r.username.toLowerCase().includes(q)),
+    );
+  }, [allRows, periodMonth, periodYear, search]);
   const claimRows = useMemo(
     () =>
       allRows.filter((r) => r.status === "claimed" && r.period_month === periodMonth && r.period_year === periodYear),
@@ -205,8 +214,14 @@ function GebyarTurnoverPage() {
   };
 
   const handleClaim = (id: string) => claimMut.mutate(id);
-  const handleDeleteInput = (id: string) => delMut.mutate(id);
-  const handleDeleteClaim = (id: string) => delMut.mutate(id);
+  const handleDeleteInput = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data turnover ini?", description: "Data akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (ok) delMut.mutate(id);
+  };
+  const handleDeleteClaim = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data claim ini?", description: "Data akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (ok) delMut.mutate(id);
+  };
 
   const inputTotals = useMemo(
     () => ({ members: inputRows.length, bonus: inputRows.reduce((n, r) => n + r.prize_amount, 0) }),
@@ -241,13 +256,27 @@ function GebyarTurnoverPage() {
       <div className="grid gap-4 lg:grid-cols-2 items-start">
         {/* LEFT — Input */}
         <section className="glass-panel soft-shadow rounded-xl">
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Input Data Turnover
             </div>
-            <Button size="sm" variant="secondary" onClick={() => setPasteOpen(true)} className="h-8 gap-1.5 text-xs">
-              <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setInputPage(1);
+                  }}
+                  placeholder="Cari username…"
+                  className="h-8 w-[180px] bg-secondary/40 pl-7 text-xs"
+                />
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setPasteOpen(true)} className="h-8 gap-1.5 text-xs">
+                <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 p-4">

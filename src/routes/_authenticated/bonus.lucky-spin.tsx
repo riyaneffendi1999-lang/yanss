@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/bonus/lucky-spin")({
   head: () => ({ meta: [{ title: "Lucky Spin — Admin Console" }] }),
@@ -54,6 +55,11 @@ function todayISO() {
 
 function LuckySpinPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
+  const askDelete = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    if (ok) deleteMut.mutate(id);
+  };
   const [pasteValue, setPasteValue] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
@@ -329,7 +335,7 @@ function LuckySpinPage() {
                             size="icon"
                             variant="ghost"
                             className="size-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteMut.mutate(row.id)}
+                            onClick={() => askDelete(row.id)}
                             title="Hapus"
                           >
                             <Trash2 className="size-4" />
@@ -440,7 +446,7 @@ function LuckySpinPage() {
                             size="icon"
                             variant="ghost"
                             className="size-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteMut.mutate(r.id)}
+                            onClick={() => askDelete(r.id)}
                           >
                             <Trash2 className="size-4" />
                           </Button>

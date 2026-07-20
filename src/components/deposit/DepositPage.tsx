@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export type DepositChannelKind = "bank" | "emoney" | "pulsa";
 
@@ -509,7 +510,13 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     }
   };
 
+  const confirmDelete = useConfirmDelete();
   const onDelete = async (id: string) => {
+    const ok = await confirmDelete({
+      title: "Hapus transaksi ini?",
+      description: "Data transaksi akan dihapus permanen. Tekan Enter untuk konfirmasi.",
+    });
+    if (!ok) return;
     try {
       await deleteMut.mutateAsync(id);
       toast.success("Transaksi dihapus");

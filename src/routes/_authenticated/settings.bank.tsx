@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/settings/bank")({
   head: () => ({ meta: [{ title: "Manage Bank — Admin Console" }] }),
@@ -65,6 +66,7 @@ const emptyForm = () => ({
 
 function ManageBankPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"all" | Channel>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -163,7 +165,8 @@ function ManageBankPage() {
     }
   }
   async function remove(r: BankRow) {
-    if (!confirm(`Hapus ${r.channel_name}?`)) return;
+    const ok = await confirmDelete({ title: `Hapus ${r.channel_name}?`, description: "Data bank akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (!ok) return;
     try { await deleteMut.mutateAsync(r.id); toast.success(`${r.channel_name} dihapus`); }
     catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
   }

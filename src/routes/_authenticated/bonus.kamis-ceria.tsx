@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/bonus/kamis-ceria")({
   head: () => ({ meta: [{ title: "Kamis Ceria — Admin Console" }] }),
@@ -30,6 +31,11 @@ const QK = ["kamis-ceria-claims"] as const;
 
 function KamisCeriaPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
+  const askDelete = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus klaim ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    if (ok) delMut.mutate(id);
+  };
   const [username, setUsername] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
@@ -182,7 +188,7 @@ function KamisCeriaPage() {
                     <Badge className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300 ring-1 ring-emerald-500/30" variant="secondary">Complete</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => delMut.mutate(r.id)}>
+                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => askDelete(r.id)}>
                       <Trash2 className="size-4" />
                     </Button>
                   </td>
