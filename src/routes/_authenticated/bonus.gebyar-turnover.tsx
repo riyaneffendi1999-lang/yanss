@@ -38,7 +38,7 @@ type InputRow = {
   prize_amount: number; // 0 for item prizes
 };
 
-type ClaimRow = InputRow & { claimed_at: string };
+type ClaimRow = InputRow & { claimed_at: string; period_month: number; period_year: number };
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
