@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshButton } from "@/components/common/RefreshButton";
 
 export const Route = createFileRoute("/_authenticated/settings/roles")({
   head: () => ({ meta: [{ title: "Role & Akses — Admin Console" }] }),
