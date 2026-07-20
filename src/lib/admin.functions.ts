@@ -58,17 +58,18 @@ async function getAdminClient() {
   });
 }
 
-async function assertHead(supabase: any, userId: string) {
-  const [{ data: isHead, error: headErr }, { data: isSuperAdmin, error: superErr }] = await Promise.all([
-    supabase.rpc("has_role", { _user_id: userId, _role: "head" }),
-    supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
-  ]);
+async function assertHead(supabaseAdmin: any, userId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", ["head", "super_admin"]);
 
-  if (headErr || superErr) {
-    throw new Error(headErr?.message || superErr?.message || "Gagal memeriksa role admin");
+  if (error) {
+    throw new Error(error.message || "Gagal memeriksa role admin");
   }
 
-  if (!isHead && !isSuperAdmin) {
+  if (!data || data.length === 0) {
     throw new Error("Forbidden: hanya Head yang boleh mengelola admin");
   }
 }
@@ -166,8 +167,8 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
 export const listAdmins = createServerFn({ method: "GET" })
   .handler(async () => {
     const session = await requireAdminSession();
-    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
+    await assertHead(supabaseAdmin, session.userId);
 
     const { data: profiles, error: pErr } = await supabaseAdmin
       .from("profiles")
@@ -232,8 +233,8 @@ export const createAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => createSchema.parse(d))
   .handler(async ({ data }) => {
     const session = await requireAdminSession();
-    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
+    await assertHead(supabaseAdmin, session.userId);
     const email = usernameToEmail(data.username);
 
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
@@ -274,8 +275,8 @@ export const updateAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => updateSchema.parse(d))
   .handler(async ({ data }) => {
     const session = await requireAdminSession();
-    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
+    await assertHead(supabaseAdmin, session.userId);
 
     if (data.full_name !== undefined || data.is_active !== undefined) {
       const patch: any = {};
@@ -310,11 +311,11 @@ export const deleteAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const session = await requireAdminSession();
-    await assertHead(session.supabase, session.userId);
     if (data.id === session.userId) {
       throw new Error("Tidak dapat menghapus akun sendiri");
     }
     const supabaseAdmin = await getAdminClient();
+    await assertHead(supabaseAdmin, session.userId);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
