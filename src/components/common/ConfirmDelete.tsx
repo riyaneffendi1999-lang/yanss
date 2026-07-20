@@ -46,7 +46,7 @@ export function ConfirmDeleteProvider({ children }: { children: React.ReactNode 
   const handle = (v: boolean) => {
     setOpen(false);
     resolverRef.current?.(v);
-    resolverRef.current = undefined;
+    resolverRef.current = null;
   };
 
   return (
