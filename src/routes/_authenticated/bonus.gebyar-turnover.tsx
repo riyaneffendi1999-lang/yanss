@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardPaste, Plus, Trash2, Trophy, Users, Gift } from "lucide-react";
+import { ClipboardPaste, Plus, Trash2, Trophy, Users, Gift, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
@@ -15,6 +15,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/bonus/gebyar-turnover")({
@@ -37,37 +45,60 @@ const MONTHS = [
   "Juli", "Agustus", "September", "Oktober", "November", "Desember",
 ];
 
+const PAGE_SIZE = 10;
+
 const rp = (n: number) => "Rp " + n.toLocaleString("id-ID", { maximumFractionDigits: 0 });
 const num = (n: number) => n.toLocaleString("id-ID");
 
 /**
- * Parses concatenated turnover paste like:
- *   `noni77733,331,437,000IPHONE 16 PRO MAX (256 GB)memori889,379,244,800Rp 10.000.000...`
- * Each entry = username + turnover(comma-formatted) + prize(text or "Rp X.XXX.XXX").
+ * Parses tab/space separated turnover paste. Each line = username \t turnover \t prize.
+ * Also supports the legacy concatenated format for backward compatibility.
  * Item prizes → amount = 0.
  */
 export function parseGebyarPaste(text: string): InputRow[] {
+  const out: InputRow[] = [];
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+  // Line-based parsing (tab or multi-space separated)
+  const lineRe = /^([A-Za-z][A-Za-z0-9_.-]*)\s+([\d,]+(?:\.\d+)?)\s+(.+)$/;
+  let matchedAny = false;
+  for (const line of lines) {
+    const m = line.match(lineRe);
+    if (!m) continue;
+    matchedAny = true;
+    const turnover = Number(m[2].replace(/,/g, ""));
+    const prizeRaw = m[3].trim();
+    const money = prizeRaw.match(/Rp\s*([\d.,]+)/i);
+    let prize_amount = 0;
+    if (money) {
+      const digits = money[1].replace(/[.,]/g, "");
+      prize_amount = Number(digits) || 0;
+    }
+    if (!isFinite(turnover)) continue;
+    out.push({
+      id: crypto.randomUUID(),
+      username: m[1],
+      turnover,
+      prize_text: prizeRaw || "—",
+      prize_amount,
+    });
+  }
+  if (matchedAny) return out;
+
+  // Fallback: concatenated format
   const clean = text.replace(/\s+/g, " ").trim();
-  // Non-greedy username so the turnover starts with 1-3 digits then comma triplets.
   const re = /([A-Za-z][A-Za-z0-9_]*?)(\d{1,3}(?:,\d{3})+)/g;
   const matches: Array<{ user: string; turnover: number; start: number; end: number }> = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(clean)) !== null) {
     const turnover = Number(m[2].replace(/,/g, ""));
     if (!isFinite(turnover)) continue;
-    matches.push({
-      user: m[1],
-      turnover,
-      start: m.index,
-      end: m.index + m[0].length,
-    });
+    matches.push({ user: m[1], turnover, start: m.index, end: m.index + m[0].length });
   }
-  const out: InputRow[] = [];
   for (let i = 0; i < matches.length; i++) {
     const cur = matches[i];
     const next = matches[i + 1];
     const prizeRaw = clean.slice(cur.end, next?.start ?? clean.length).trim();
-    // Detect monetary prize like "Rp 10.000.000" or "10.000.000".
     const money = prizeRaw.match(/Rp\s*([\d.,]+)/i);
     let prize_amount = 0;
     if (money) {
@@ -88,7 +119,7 @@ export function parseGebyarPaste(text: string): InputRow[] {
 const STORAGE_KEY = "gebyar_turnover_state_v1";
 
 type PersistedState = {
-  period_month: number; // 1-12
+  period_month: number;
   period_year: number;
   input: InputRow[];
   claims: ClaimRow[];
@@ -115,6 +146,9 @@ function loadState(): PersistedState {
 function GebyarTurnoverPage() {
   const [state, setState] = useState<PersistedState>(loadState);
   const [paste, setPaste] = useState("");
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [inputPage, setInputPage] = useState(1);
+  const [claimPage, setClaimPage] = useState(1);
 
   useEffect(() => {
     try {
@@ -128,12 +162,13 @@ function GebyarTurnoverPage() {
     const parsed = parseGebyarPaste(paste);
     if (parsed.length === 0) {
       toast.error("Format tidak dikenali", {
-        description: "Tempel data turnover dengan format username+turnover+hadiah.",
+        description: "Tempel data turnover dengan format username [tab] turnover [tab] hadiah.",
       });
       return;
     }
     setState((s) => ({ ...s, input: [...s.input, ...parsed] }));
     setPaste("");
+    setPasteOpen(false);
     toast.success(`${parsed.length} data turnover ditambahkan`);
   };
 
@@ -155,17 +190,25 @@ function GebyarTurnoverPage() {
   const handleDeleteClaim = (id: string) =>
     setState((s) => ({ ...s, claims: s.claims.filter((r) => r.id !== id) }));
 
-  const inputTotals = useMemo(() => {
-    const members = state.input.length;
-    const bonus = state.input.reduce((n, r) => n + r.prize_amount, 0);
-    return { members, bonus };
-  }, [state.input]);
+  const inputTotals = useMemo(() => ({
+    members: state.input.length,
+    bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
+  }), [state.input]);
 
-  const claimTotals = useMemo(() => {
-    const members = state.claims.length;
-    const bonus = state.claims.reduce((n, r) => n + r.prize_amount, 0);
-    return { members, bonus };
-  }, [state.claims]);
+  const claimTotals = useMemo(() => ({
+    members: state.claims.length,
+    bonus: state.claims.reduce((n, r) => n + r.prize_amount, 0),
+  }), [state.claims]);
+
+  const inputPageCount = Math.max(1, Math.ceil(state.input.length / PAGE_SIZE));
+  const claimPageCount = Math.max(1, Math.ceil(state.claims.length / PAGE_SIZE));
+  const inputPageSafe = Math.min(inputPage, inputPageCount);
+  const claimPageSafe = Math.min(claimPage, claimPageCount);
+  const inputPageRows = state.input.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
+  const claimPageRows = state.claims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
+
+  useEffect(() => { if (inputPage > inputPageCount) setInputPage(inputPageCount); }, [inputPageCount, inputPage]);
+  useEffect(() => { if (claimPage > claimPageCount) setClaimPage(claimPageCount); }, [claimPageCount, claimPage]);
 
   return (
     <div>
@@ -174,75 +217,44 @@ function GebyarTurnoverPage() {
         description="Data kiri = input baru • Data kanan = sudah Claim"
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 items-start">
         {/* LEFT — Input */}
         <section className="glass-panel soft-shadow rounded-xl">
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Input Data Turnover
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-md bg-secondary/60 px-2 py-1 text-[11px] text-muted-foreground">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setPasteOpen(true)}
+              className="h-8 gap-1.5 text-xs"
+            >
               <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
-            </div>
+            </Button>
           </div>
 
-          <div className="space-y-3 p-4">
-            <div className="grid grid-cols-[1fr_120px] gap-2">
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Periode
-                </Label>
-                <Select
-                  value={String(state.period_month)}
-                  onValueChange={(v) => setState((s) => ({ ...s, period_month: Number(v) }))}
-                >
-                  <SelectTrigger className="bg-secondary/40"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {MONTHS.map((mn, i) => (
-                      <SelectItem key={mn} value={String(i + 1)}>{mn}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                  Tahun
-                </Label>
-                <Input
-                  type="number"
-                  value={state.period_year}
-                  onChange={(e) => setState((s) => ({ ...s, period_year: Number(e.target.value) || s.period_year }))}
-                  className="bg-secondary/40"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="text-[11px] text-muted-foreground">
-                Contoh: <span className="font-mono text-rose-400">lucky77bibi7,623,850250.000abisceka7,356,380500.000...</span>
-              </div>
-              <Textarea
-                value={paste}
-                onChange={(e) => setPaste(e.target.value)}
-                placeholder="Paste data di sini..."
-                rows={4}
-                className="bg-secondary/40 font-mono text-xs"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button onClick={handleAdd} disabled={!paste.trim()} size="sm">
-                <Plus className="mr-1.5 h-4 w-4" /> Tambah ke Tabel
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setPaste("")}>
-                Batal
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 border-t border-border/60 p-4">
+          <div className="grid grid-cols-2 gap-3 p-4">
             <MiniStat tone="sky" label="Total Member" value={`${inputTotals.members} member`} />
             <MiniStat tone="amber" label="Total Claim Bonus Terpending" value={rp(inputTotals.bonus)} />
+          </div>
+
+          <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Select value={String(state.period_month)} onValueChange={(v) => setState((s) => ({ ...s, period_month: Number(v) }))}>
+                <SelectTrigger className="h-7 w-[110px] bg-secondary/40 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((mn, i) => (<SelectItem key={mn} value={String(i + 1)}>{mn}</SelectItem>))}
+                </SelectContent>
+              </Select>
+              <Input
+                type="number"
+                value={state.period_year}
+                onChange={(e) => setState((s) => ({ ...s, period_year: Number(e.target.value) || s.period_year }))}
+                className="h-7 w-[80px] bg-secondary/40 text-xs"
+              />
+              <span>({state.input.length} member)</span>
+            </div>
           </div>
 
           <div className="border-t border-border/60">
@@ -256,21 +268,23 @@ function GebyarTurnoverPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                      <th className="px-4 py-2 text-left font-medium w-12">No</th>
                       <th className="px-4 py-2 text-left font-medium">Username</th>
-                      <th className="px-4 py-2 text-right font-medium">Turnover</th>
+                      <th className="px-4 py-2 text-right font-medium">Total Turnover</th>
                       <th className="px-4 py-2 text-left font-medium">Hadiah</th>
-                      <th className="px-4 py-2 text-right font-medium">Nilai</th>
                       <th className="px-4 py-2 text-right font-medium">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {state.input.map((r) => (
+                    {inputPageRows.map((r, i) => (
                       <tr key={r.id} className="border-t border-border/50 hover:bg-secondary/30">
+                        <td className="px-4 py-2 text-muted-foreground">{(inputPageSafe - 1) * PAGE_SIZE + i + 1}</td>
                         <td className="px-4 py-2 font-semibold text-primary">{r.username}</td>
                         <td className="px-4 py-2 text-right font-mono text-xs">{num(r.turnover)}</td>
-                        <td className="px-4 py-2 text-xs text-muted-foreground">{r.prize_text}</td>
-                        <td className="px-4 py-2 text-right font-semibold">
-                          {r.prize_amount > 0 ? rp(r.prize_amount) : <span className="text-muted-foreground">Barang</span>}
+                        <td className="px-4 py-2 text-xs">
+                          {r.prize_amount > 0
+                            ? <span className="font-semibold">{rp(r.prize_amount)}</span>
+                            : <span className="text-muted-foreground">{r.prize_text}</span>}
                         </td>
                         <td className="px-4 py-2 text-right">
                           <div className="inline-flex items-center gap-1">
@@ -294,6 +308,7 @@ function GebyarTurnoverPage() {
                     ))}
                   </tbody>
                 </table>
+                <Pagination page={inputPageSafe} pageCount={inputPageCount} onChange={setInputPage} total={state.input.length} />
               </div>
             )}
           </div>
@@ -329,7 +344,7 @@ function GebyarTurnoverPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {state.claims.map((r) => (
+                  {claimPageRows.map((r) => (
                     <tr key={r.id} className="border-t border-border/50 hover:bg-secondary/30">
                       <td className="px-4 py-2 text-xs text-muted-foreground">
                         {new Date(r.claimed_at).toLocaleString("id-ID")}
@@ -353,9 +368,67 @@ function GebyarTurnoverPage() {
                   ))}
                 </tbody>
               </table>
+              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={state.claims.length} />
             </div>
           )}
         </section>
+      </div>
+
+      {/* Paste Data Dialog */}
+      <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Paste Data Turnover</DialogTitle>
+            <DialogDescription>
+              Tempel data dengan format: <span className="font-mono text-rose-400">username [tab] turnover [tab] hadiah</span>.
+              Hadiah berupa barang otomatis dihitung <b>Rp 0</b>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label className="text-[11px] uppercase tracking-wider text-muted-foreground">Data</Label>
+            <Textarea
+              value={paste}
+              onChange={(e) => setPaste(e.target.value)}
+              placeholder={"noni777\t33,331,437,000\tIPHONE 16 PRO MAX (256 GB)\nmemori88\t9,379,244,800\tRp 10.000.000\nrtanto88\t8,257,596,000\tRp 10.000.000"}
+              rows={10}
+              className="bg-secondary/40 font-mono text-xs"
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPaste(""); setPasteOpen(false); }}>Batal</Button>
+            <Button onClick={handleAdd} disabled={!paste.trim()}>
+              <Plus className="mr-1.5 h-4 w-4" /> Tambah ke Tabel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function Pagination({
+  page, pageCount, onChange, total,
+}: { page: number; pageCount: number; onChange: (n: number) => void; total: number }) {
+  if (total === 0) return null;
+  return (
+    <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
+      <span>Halaman {page} dari {pageCount} • {total} baris</span>
+      <div className="inline-flex items-center gap-1">
+        <button
+          onClick={() => onChange(Math.max(1, page - 1))}
+          disabled={page <= 1}
+          className="rounded p-1.5 hover:bg-secondary disabled:opacity-40"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onChange(Math.min(pageCount, page + 1))}
+          disabled={page >= pageCount}
+          className="rounded p-1.5 hover:bg-secondary disabled:opacity-40"
+        >
+          <ChevronRight className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
