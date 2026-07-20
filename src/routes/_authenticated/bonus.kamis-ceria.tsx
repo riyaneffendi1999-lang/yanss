@@ -118,10 +118,11 @@ function KamisCeriaPage() {
         <div className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-sky-500/20 to-primary/20 ring-1 ring-sky-500/30">
           <CalendarDays className="size-6 text-sky-400" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Kamis Ceria</h1>
           <p className="text-sm text-muted-foreground">Rekap program bonus Kamis Ceria</p>
         </div>
+        <RefreshButton queryKeys={[QK]} />
       </motion.div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
