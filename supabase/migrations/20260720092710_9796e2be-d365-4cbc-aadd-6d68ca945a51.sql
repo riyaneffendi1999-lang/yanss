@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Super admin can manage all roles" ON public.user_roles;
