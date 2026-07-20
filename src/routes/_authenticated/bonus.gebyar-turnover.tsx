@@ -110,6 +110,7 @@ export function parseGebyarPaste(text: string): ParsedRow[] {
 
 function GebyarTurnoverPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
   const now = new Date();
   const [periodMonth, setPeriodMonth] = useState(now.getMonth() + 1);
   const [periodYear, setPeriodYear] = useState(now.getFullYear());
@@ -117,6 +118,7 @@ function GebyarTurnoverPage() {
   const [pasteOpen, setPasteOpen] = useState(false);
   const [inputPage, setInputPage] = useState(1);
   const [claimPage, setClaimPage] = useState(1);
+  const [search, setSearch] = useState("");
 
   const { data: allRows = [] } = useQuery({
     queryKey: QK,
