@@ -109,23 +109,6 @@ async function listAdminsFromClient(): Promise<AdminRow[]> {
   });
 }
 
-async function getFreshAuthToken() {
-  const { data } = await supabase.auth.getSession();
-  let session = data.session;
-  const now = Math.floor(Date.now() / 1000);
-
-  if (session?.expires_at && session.expires_at <= now + 60) {
-    const refreshed = await supabase.auth.refreshSession();
-    session = refreshed.data.session ?? session;
-  }
-
-  if (!session?.access_token) {
-    throw new Error("Sesi login tidak ditemukan. Silakan logout lalu login ulang.");
-  }
-
-  return session.access_token;
-}
-
 const createFormSchema = z.object({
   username: z
     .string()
@@ -162,8 +145,7 @@ function ManageAdminPage() {
     queryKey: ["admins"],
     queryFn: async () => {
       try {
-        const authToken = await getFreshAuthToken();
-        return await listFn({ data: { authToken } });
+        return await listFn();
       } catch {
         return listAdminsFromClient();
       }
@@ -188,8 +170,7 @@ function ManageAdminPage() {
 
   const createMut = useMutation({
     mutationFn: async (v: CreateValues) => {
-      const authToken = await getFreshAuthToken();
-      return createFn({ data: { ...v, authToken } });
+      return createFn({ data: v });
     },
     onSuccess: () => {
       toast.success("Admin berhasil dibuat");
@@ -207,8 +188,7 @@ function ManageAdminPage() {
       is_active?: boolean;
       password?: string;
     }) => {
-      const authToken = await getFreshAuthToken();
-      return updateFn({ data: { ...v, authToken } });
+      return updateFn({ data: v });
     },
     onSuccess: () => {
       toast.success("Admin diperbarui");
@@ -220,8 +200,7 @@ function ManageAdminPage() {
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
-      const authToken = await getFreshAuthToken();
-      return deleteFn({ data: { id, authToken } });
+      return deleteFn({ data: { id } });
     },
     onSuccess: () => {
       toast.success("Admin dihapus");
