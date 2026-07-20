@@ -35,12 +35,6 @@ const INPUT_PAGE_SIZE = 20;
 const COMPLETE_PAGE_SIZE = 10;
 const QK = ["lucky-spin-entries"] as const;
 
-function randomTicket() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let out = "";
-  for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
-  return out;
-}
 
 function parseTickets(raw: string): string[] {
   return raw
@@ -151,9 +145,6 @@ function LuckySpinPage() {
     if (Object.keys(patch).length > 0) updateMut.mutate({ id: row.id, patch });
   };
 
-  const addBlank = () => {
-    insertMut.mutate([{ ticket: randomTicket() }]);
-  };
 
   const handleAddFromPaste = () => {
     const tickets = parseTickets(pasteValue);
@@ -268,10 +259,6 @@ function LuckySpinPage() {
               <Button onClick={handleAddFromPaste} size="sm" className="gap-1.5" disabled={insertMut.isPending}>
                 <Plus className="size-4" />
                 Tambah
-              </Button>
-              <Button onClick={addBlank} size="sm" variant="outline" className="gap-1.5" disabled={insertMut.isPending}>
-                <Plus className="size-4" />
-                Baris
               </Button>
             </div>
           </div>
