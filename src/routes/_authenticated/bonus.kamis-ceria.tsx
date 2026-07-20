@@ -188,7 +188,7 @@ function KamisCeriaPage() {
                     <Badge className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300 ring-1 ring-emerald-500/30" variant="secondary">Complete</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => delMut.mutate(r.id)}>
+                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => askDelete(r.id)}>
                       <Trash2 className="size-4" />
                     </Button>
                   </td>
