@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CalendarDays, Users, Wallet, Plus, Search, Trash2, Info } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/bonus/kamis-ceria")({
   head: () => ({ meta: [{ title: "Kamis Ceria — Admin Console" }] }),
@@ -16,52 +18,66 @@ export const Route = createFileRoute("/_authenticated/bonus/kamis-ceria")({
 
 type ClaimRow = {
   id: string;
-  date: string;
-  iso_date: string;
-  time: string;
   username: string;
   bonus: number;
+  iso_date: string;
+  created_at: string;
 };
 
-const LS_KEY = "kamis-ceria:complete";
 const BONUS_AMOUNT = 50000;
 const PAGE_SIZE = 10;
-
-function loadLS(): ClaimRow[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(LS_KEY);
-    return raw ? (JSON.parse(raw) as ClaimRow[]) : [];
-  } catch { return []; }
-}
+const QK = ["kamis-ceria-claims"] as const;
 
 function KamisCeriaPage() {
-  const [rows, setRows] = useState<ClaimRow[]>(() => loadLS());
+  const qc = useQueryClient();
   const [username, setUsername] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    try { window.localStorage.setItem(LS_KEY, JSON.stringify(rows)); } catch { /* ignore */ }
-  }, [rows]);
+  const { data: rows = [] } = useQuery({
+    queryKey: QK,
+    queryFn: async (): Promise<ClaimRow[]> => {
+      const { data, error } = await supabase
+        .from("kamis_ceria_claims")
+        .select("id,username,bonus,iso_date,created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as ClaimRow[];
+    },
+  });
+
+  const addMut = useMutation({
+    mutationFn: async (u: string) => {
+      const { data: sess } = await supabase.auth.getUser();
+      const { error } = await supabase.from("kamis_ceria_claims").insert({
+        username: u,
+        bonus: BONUS_AMOUNT,
+        created_by: sess.user?.id ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, u) => {
+      qc.invalidateQueries({ queryKey: QK });
+      toast.success(`Bonus Kamis Ceria untuk ${u} tercatat`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("kamis_ceria_claims").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const handleAdd = () => {
     const u = username.trim();
     if (!u) return toast.error("Username wajib diisi");
-    const now = new Date();
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const row: ClaimRow = {
-      id: crypto.randomUUID(),
-      date: now.toLocaleDateString("id-ID"),
-      iso_date: iso,
-      time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      username: u,
-      bonus: BONUS_AMOUNT,
-    };
-    setRows((prev) => [row, ...prev]);
+    addMut.mutate(u);
     setUsername("");
-    toast.success(`Bonus Kamis Ceria untuk ${u} tercatat`);
   };
 
   const { effFrom, effTo } = useMemo(() => {
@@ -80,13 +96,15 @@ function KamisCeriaPage() {
   }, [rows, search, effFrom, effTo]);
 
   const totalMember = new Set(rows.map((r) => r.username)).size;
-  const totalBonus = rows.reduce((s, r) => s + r.bonus, 0);
+  const totalBonus = rows.reduce((s, r) => s + Number(r.bonus), 0);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
-  const remove = (id: string) => setRows((prev) => prev.filter((r) => r.id !== id));
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString("id-ID");
+  const fmtTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
     <div className="space-y-5">
@@ -124,7 +142,7 @@ function KamisCeriaPage() {
           <Badge className="h-9 rounded-md bg-emerald-500/15 px-3 text-sm text-emerald-300 ring-1 ring-emerald-500/30">
             Rp {BONUS_AMOUNT.toLocaleString("id-ID")}
           </Badge>
-          <Button size="sm" className="h-9 gap-1.5" onClick={handleAdd}>
+          <Button size="sm" className="h-9 gap-1.5" onClick={handleAdd} disabled={addMut.isPending}>
             <Plus className="size-4" /> Tambah
           </Button>
           <div className="relative">
@@ -156,15 +174,15 @@ function KamisCeriaPage() {
                 <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Belum ada data untuk periode ini</td></tr>
               ) : paged.map((r) => (
                 <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-4 py-3 text-muted-foreground">{r.date}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{r.time}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.created_at)}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{fmtTime(r.created_at)}</td>
                   <td className="px-4 py-3 font-medium">{r.username}</td>
-                  <td className="px-4 py-3 text-emerald-300">Rp {r.bonus.toLocaleString("id-ID")}</td>
+                  <td className="px-4 py-3 text-emerald-300">Rp {Number(r.bonus).toLocaleString("id-ID")}</td>
                   <td className="px-4 py-3">
                     <Badge className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300 ring-1 ring-emerald-500/30" variant="secondary">Complete</Badge>
                   </td>
                   <td className="px-4 py-3 text-right">
-                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => remove(r.id)}>
+                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => delMut.mutate(r.id)}>
                       <Trash2 className="size-4" />
                     </Button>
                   </td>
