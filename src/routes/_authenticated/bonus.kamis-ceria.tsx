@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirmDelete } from "@/components/common/ConfirmDelete";
+import { RefreshButton } from "@/components/common/RefreshButton";
 
 export const Route = createFileRoute("/_authenticated/bonus/kamis-ceria")({
   head: () => ({ meta: [{ title: "Kamis Ceria — Admin Console" }] }),
