@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
@@ -59,15 +59,55 @@ async function getAdminClient() {
 }
 
 async function assertHead(supabase: any, userId: string) {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
-  if (error) throw new Error(error.message);
-  const roles = (data ?? []).map((r: any) => r.role as string);
-  if (!roles.includes("head") && !roles.includes("super_admin")) {
+  const [{ data: isHead, error: headErr }, { data: isSuperAdmin, error: superErr }] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "head" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
+  ]);
+
+  if (headErr || superErr) {
+    throw new Error(headErr?.message || superErr?.message || "Gagal memeriksa role admin");
+  }
+
+  if (!isHead && !isSuperAdmin) {
     throw new Error("Forbidden: hanya Head yang boleh mengelola admin");
   }
+}
+
+async function requireAdminSession() {
+  const request = getRequest();
+  const authHeader = request?.headers?.get("authorization");
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Unauthorized: silakan logout lalu login kembali");
+  }
+
+  const token = authHeader.replace("Bearer ", "").trim();
+  if (!token) {
+    throw new Error("Unauthorized: token login tidak ditemukan");
+  }
+
+  const { createClient } = await import("@supabase/supabase-js");
+  const { url, publishableKey } = readSupabaseConfig();
+  const supabase = createClient(url, publishableKey, {
+    global: {
+      fetch: createSupabaseFetch(publishableKey),
+      headers: { Authorization: `Bearer ${token}` },
+    },
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  // Use Supabase Auth server validation instead of local JWT claims parsing,
+  // so both legacy and newer signing tokens work on custom domains.
+  const { data, error } = await supabase.auth.getUser(token);
+  if (error || !data.user?.id) {
+    throw new Error("Unauthorized: sesi login tidak valid, silakan login ulang");
+  }
+
+  return { supabase, userId: data.user.id };
 }
 
 function usernameToEmail(username: string) {
@@ -124,9 +164,9 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
 // LIST admins (auth: head/super_admin)
 // -----------------------------------------------------------------------------
 export const listAdmins = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    await assertHead(context.supabase, context.userId);
+  .handler(async () => {
+    const session = await requireAdminSession();
+    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
 
     const { data: profiles, error: pErr } = await supabaseAdmin
@@ -190,9 +230,9 @@ const createSchema = z.object({
 
 export const createAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => createSchema.parse(d))
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ data, context }) => {
-    await assertHead(context.supabase, context.userId);
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
     const email = usernameToEmail(data.username);
 
@@ -232,9 +272,9 @@ const updateSchema = z.object({
 
 export const updateAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => updateSchema.parse(d))
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ data, context }) => {
-    await assertHead(context.supabase, context.userId);
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+    await assertHead(session.supabase, session.userId);
     const supabaseAdmin = await getAdminClient();
 
     if (data.full_name !== undefined || data.is_active !== undefined) {
@@ -268,10 +308,10 @@ export const updateAdmin = createServerFn({ method: "POST" })
 // -----------------------------------------------------------------------------
 export const deleteAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ data, context }) => {
-    await assertHead(context.supabase, context.userId);
-    if (data.id === context.userId) {
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession();
+    await assertHead(session.supabase, session.userId);
+    if (data.id === session.userId) {
       throw new Error("Tidak dapat menghapus akun sendiri");
     }
     const supabaseAdmin = await getAdminClient();
