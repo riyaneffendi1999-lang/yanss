@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Trash2, Check, Search, Calendar, Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,50 +10,34 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/bonus/lucky-spin")({
   head: () => ({ meta: [{ title: "Lucky Spin — Admin Console" }] }),
   component: LuckySpinPage,
 });
 
-type InputRow = {
+type Entry = {
   id: string;
-  username: string;
-  ticket: string;
-  bonus: string;
-  status: "pending" | "complete" | "idle";
-};
-
-type CompleteRow = {
-  id: string;
-  date: string;
-  iso_date: string;
-  time: string;
   username: string;
   ticket: string;
   bonus: number;
-  status: "complete";
+  status: "input" | "complete";
+  processed_at: string | null;
+  iso_date: string | null;
+  created_at: string;
 };
 
 const MAX_INPUT_TICKETS = 10;
 const INPUT_PAGE_SIZE = 20;
 const COMPLETE_PAGE_SIZE = 10;
+const QK = ["lucky-spin-entries"] as const;
 
 function randomTicket() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "";
   for (let i = 0; i < 10; i++) out += chars[Math.floor(Math.random() * chars.length)];
   return out;
-}
-
-function makeEmptyRows(count: number): InputRow[] {
-  return Array.from({ length: count }, () => ({
-    id: crypto.randomUUID(),
-    username: "",
-    ticket: randomTicket(),
-    bonus: "",
-    status: "idle",
-  }));
 }
 
 function parseTickets(raw: string): string[] {
@@ -62,60 +47,101 @@ function parseTickets(raw: string): string[] {
     .filter((t) => t.length >= 9 && t.length <= 12 && /^[A-Z0-9]+$/.test(t));
 }
 
-const LS_INPUT_KEY = "lucky-spin/input-rows";
-const LS_COMPLETE_KEY = "lucky-spin/complete-rows";
-
-function loadLS<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
+function todayISO() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
 function LuckySpinPage() {
-  const [inputRows, setInputRows] = useState<InputRow[]>(() =>
-    loadLS<InputRow[]>(LS_INPUT_KEY, makeEmptyRows(MAX_INPUT_TICKETS)),
-  );
+  const qc = useQueryClient();
   const [pasteValue, setPasteValue] = useState("");
-  const [completeRows, setCompleteRows] = useState<CompleteRow[]>(() => loadLS<CompleteRow[]>(LS_COMPLETE_KEY, []));
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const [page, setPage] = useState(1);
   const [inputPage, setInputPage] = useState(1);
+  // Local draft edits keyed by row id (username / bonus) so typing doesn't require a network round-trip per keystroke.
+  const [drafts, setDrafts] = useState<Record<string, { username?: string; bonus?: string }>>({});
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(LS_INPUT_KEY, JSON.stringify(inputRows));
-    } catch {
-      /* ignore */
-    }
-  }, [inputRows]);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(LS_COMPLETE_KEY, JSON.stringify(completeRows));
-    } catch {
-      /* ignore */
-    }
-  }, [completeRows]);
+  const { data: rows = [] } = useQuery({
+    queryKey: QK,
+    queryFn: async (): Promise<Entry[]> => {
+      const { data, error } = await supabase
+        .from("lucky_spin_entries")
+        .select("id,username,ticket,bonus,status,processed_at,iso_date,created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as Entry[];
+    },
+  });
 
-  const filledCount = inputRows.filter((r) => r.ticket && r.username).length;
+  const inputRows = useMemo(
+    () => rows.filter((r) => r.status === "input").slice().reverse(),
+    [rows],
+  );
+  const completeRows = useMemo(() => rows.filter((r) => r.status === "complete"), [rows]);
 
-  const updateRow = (id: string, patch: Partial<InputRow>) => {
-    setInputRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const insertMut = useMutation({
+    mutationFn: async (payload: { username?: string; ticket: string; bonus?: number }[]) => {
+      const { data: sess } = await supabase.auth.getUser();
+      const created_by = sess.user?.id ?? null;
+      const { error } = await supabase.from("lucky_spin_entries").insert(
+        payload.map((p) => ({
+          username: p.username ?? "",
+          ticket: p.ticket,
+          bonus: p.bonus ?? 0,
+          status: "input",
+          created_by,
+        })),
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: async (v: { id: string; patch: Partial<Entry> }) => {
+      const { error } = await supabase.from("lucky_spin_entries").update(v.patch).eq("id", v.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("lucky_spin_entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const getDraft = (row: Entry, field: "username" | "bonus") => {
+    const d = drafts[row.id];
+    if (d && d[field] !== undefined) return d[field] as string;
+    if (field === "username") return row.username;
+    return row.bonus ? String(row.bonus) : "";
   };
 
-  const deleteRow = (id: string) => {
-    setInputRows((rows) => rows.filter((r) => r.id !== id));
+  const setDraft = (id: string, field: "username" | "bonus", value: string) => {
+    setDrafts((prev) => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
   };
 
-  const addRow = () => {
-    setInputRows((rows) => [
-      ...rows,
-      { id: crypto.randomUUID(), username: "", ticket: randomTicket(), bonus: "", status: "idle" },
-    ]);
+  const commitDraft = (row: Entry) => {
+    const d = drafts[row.id];
+    if (!d) return;
+    const patch: Partial<Entry> = {};
+    if (d.username !== undefined && d.username !== row.username) patch.username = d.username;
+    if (d.bonus !== undefined) {
+      const n = Number(d.bonus.replace(/[^\d]/g, "")) || 0;
+      if (n !== row.bonus) patch.bonus = n;
+    }
+    if (Object.keys(patch).length > 0) updateMut.mutate({ id: row.id, patch });
+  };
+
+  const addBlank = () => {
+    insertMut.mutate([{ ticket: randomTicket() }]);
   };
 
   const handleAddFromPaste = () => {
@@ -124,52 +150,42 @@ function LuckySpinPage() {
       toast.error("Tiket tidak valid. Minimal 9 karakter alfanumerik per tiket.");
       return;
     }
-    setInputRows((rows) => {
-      const next = [...rows];
-      let ti = 0;
-      // fill empty ticket slots first
-      for (let i = 0; i < next.length && ti < tickets.length; i++) {
-        if (!next[i].username && next[i].status === "idle") {
-          next[i] = { ...next[i], ticket: tickets[ti++], status: "pending" };
-        }
-      }
-      // add remaining as new rows
-      while (ti < tickets.length) {
-        next.push({
-          id: crypto.randomUUID(),
-          username: "",
-          ticket: tickets[ti++],
-          bonus: "",
-          status: "pending",
-        });
-      }
-      return next;
-    });
+    insertMut.mutate(
+      tickets.map((t) => ({ ticket: t })),
+      {
+        onSuccess: () => toast.success(`${tickets.length} tiket ditambahkan`),
+      },
+    );
     setPasteValue("");
-    toast.success(`${tickets.length} tiket ditambahkan`);
   };
 
-  const processRow = (row: InputRow) => {
-    if (!row.username.trim()) return toast.error("Username wajib diisi");
-    if (!row.ticket.trim() || row.ticket.length < 9) return toast.error("Tiket minimal 9 karakter");
-    const bonusNum = Number(row.bonus.replace(/[^\d]/g, ""));
+  const processRow = (row: Entry) => {
+    const draft = drafts[row.id] ?? {};
+    const username = (draft.username ?? row.username).trim();
+    const bonusStr = draft.bonus ?? String(row.bonus ?? "");
+    const bonusNum = Number(bonusStr.replace(/[^\d]/g, ""));
+    if (!username) return toast.error("Username wajib diisi");
+    if (!row.ticket || row.ticket.length < 9) return toast.error("Tiket minimal 9 karakter");
     if (!bonusNum || bonusNum <= 0) return toast.error("Nominal bonus tidak valid");
 
-    const now = new Date();
-    const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const complete: CompleteRow = {
-      id: row.id,
-      date: now.toLocaleDateString("id-ID"),
-      iso_date: iso,
-      time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-      username: row.username,
-      ticket: row.ticket,
-      bonus: bonusNum,
-      status: "complete",
-    };
-    setCompleteRows((prev) => [complete, ...prev]);
-    setInputRows((rows) => rows.filter((r) => r.id !== row.id));
-    toast.success(`Bonus untuk ${row.username} berhasil diproses`);
+    updateMut.mutate(
+      {
+        id: row.id,
+        patch: {
+          username,
+          bonus: bonusNum,
+          status: "complete",
+          processed_at: new Date().toISOString(),
+          iso_date: todayISO(),
+        },
+      },
+      { onSuccess: () => toast.success(`Bonus untuk ${username} berhasil diproses`) },
+    );
+    setDrafts((prev) => {
+      const n = { ...prev };
+      delete n[row.id];
+      return n;
+    });
   };
 
   const { effFrom, effTo } = useMemo(() => {
@@ -180,8 +196,9 @@ function LuckySpinPage() {
   const filteredComplete = useMemo(() => {
     const q = search.trim().toLowerCase();
     return completeRows.filter((r) => {
-      if (effFrom && r.iso_date < effFrom) return false;
-      if (effTo && r.iso_date > effTo) return false;
+      const iso = r.iso_date ?? (r.processed_at ? r.processed_at.slice(0, 10) : "");
+      if (effFrom && iso < effFrom) return false;
+      if (effTo && iso > effTo) return false;
       if (!q) return true;
       return r.username.toLowerCase().includes(q) || r.ticket.toLowerCase().includes(q);
     });
@@ -198,6 +215,7 @@ function LuckySpinPage() {
   const currentInputPage = Math.min(inputPage, inputTotalPages);
   const pagedInput = inputRows.slice((currentInputPage - 1) * INPUT_PAGE_SIZE, currentInputPage * INPUT_PAGE_SIZE);
 
+  const filledCount = inputRows.filter((r) => r.username).length;
   const totalMember = new Set(completeRows.map((r) => r.username)).size;
   const totalBonus = completeRows.reduce((s, r) => s + r.bonus, 0);
 
@@ -235,9 +253,13 @@ function LuckySpinPage() {
                   {parseTickets(pasteValue).length}/{MAX_INPUT_TICKETS}
                 </span>
               </div>
-              <Button onClick={handleAddFromPaste} size="sm" className="gap-1.5">
+              <Button onClick={handleAddFromPaste} size="sm" className="gap-1.5" disabled={insertMut.isPending}>
                 <Plus className="size-4" />
                 Tambah
+              </Button>
+              <Button onClick={addBlank} size="sm" variant="outline" className="gap-1.5" disabled={insertMut.isPending}>
+                <Plus className="size-4" />
+                Baris
               </Button>
             </div>
           </div>
@@ -254,57 +276,69 @@ function LuckySpinPage() {
                 </tr>
               </thead>
               <tbody>
-                {pagedInput.map((row) => (
-                  <tr key={row.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
-                    <td className="px-5 py-2.5">
-                      <Input
-                        value={row.username}
-                        onChange={(e) => updateRow(row.id, { username: e.target.value })}
-                        placeholder="username"
-                        className="h-9 bg-background/40"
-                      />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <span className="font-mono text-xs tracking-wider text-foreground/90">{row.ticket}</span>
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <Input
-                        value={row.bonus}
-                        onChange={(e) => updateRow(row.id, { bonus: e.target.value.replace(/[^\d.,]/g, "") })}
-                        placeholder="Nominal"
-                        className="h-9 bg-background/40"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") processRow(row);
-                        }}
-                      />
-                    </td>
-                    <td className="px-3 py-2.5">
-                      <StatusPill status={row.status} />
-                    </td>
-                    <td className="px-5 py-2.5">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
-                          onClick={() => processRow(row)}
-                          title="Proses"
-                        >
-                          <Check className="size-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => deleteRow(row.id)}
-                          title="Hapus"
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </div>
+                {pagedInput.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-10 text-center text-sm text-muted-foreground">
+                      Belum ada data input. Paste tiket atau klik “Baris”.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  pagedInput.map((row) => (
+                    <tr key={row.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
+                      <td className="px-5 py-2.5">
+                        <Input
+                          value={getDraft(row, "username")}
+                          onChange={(e) => setDraft(row.id, "username", e.target.value)}
+                          onBlur={() => commitDraft(row)}
+                          placeholder="username"
+                          className="h-9 bg-background/40"
+                        />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="font-mono text-xs tracking-wider text-foreground/90">{row.ticket}</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <Input
+                          value={getDraft(row, "bonus")}
+                          onChange={(e) =>
+                            setDraft(row.id, "bonus", e.target.value.replace(/[^\d.,]/g, ""))
+                          }
+                          onBlur={() => commitDraft(row)}
+                          placeholder="Nominal"
+                          className="h-9 bg-background/40"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") processRow(row);
+                          }}
+                        />
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <StatusPill status={row.username ? "pending" : "idle"} />
+                      </td>
+                      <td className="px-5 py-2.5">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300"
+                            onClick={() => processRow(row)}
+                            title="Proses"
+                          >
+                            <Check className="size-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteMut.mutate(row.id)}
+                            title="Hapus"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -387,28 +421,33 @@ function LuckySpinPage() {
                     </td>
                   </tr>
                 ) : (
-                  pagedComplete.map((r) => (
-                    <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
-                      <td className="px-5 py-3 text-muted-foreground">{r.date}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{r.time}</td>
-                      <td className="px-3 py-3 font-medium">{r.username}</td>
-                      <td className="px-3 py-3 font-mono text-xs">{r.ticket}</td>
-                      <td className="px-3 py-3 text-emerald-300">Rp {r.bonus.toLocaleString("id-ID")}</td>
-                      <td className="px-3 py-3">
-                        <StatusPill status="complete" />
-                      </td>
-                      <td className="px-5 py-3 text-right">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8 text-destructive hover:bg-destructive/10"
-                          onClick={() => setCompleteRows((rows) => rows.filter((x) => x.id !== r.id))}
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))
+                  pagedComplete.map((r) => {
+                    const d = r.processed_at ? new Date(r.processed_at) : new Date(r.created_at);
+                    return (
+                      <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
+                        <td className="px-5 py-3 text-muted-foreground">{d.toLocaleDateString("id-ID")}</td>
+                        <td className="px-3 py-3 text-muted-foreground">
+                          {d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        </td>
+                        <td className="px-3 py-3 font-medium">{r.username}</td>
+                        <td className="px-3 py-3 font-mono text-xs">{r.ticket}</td>
+                        <td className="px-3 py-3 text-emerald-300">Rp {r.bonus.toLocaleString("id-ID")}</td>
+                        <td className="px-3 py-3">
+                          <StatusPill status="complete" />
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteMut.mutate(r.id)}
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -428,7 +467,7 @@ function LuckySpinPage() {
   );
 }
 
-function StatusPill({ status }: { status: InputRow["status"] }) {
+function StatusPill({ status }: { status: "pending" | "complete" | "idle" }) {
   const map = {
     pending: { label: "Pending", cls: "bg-amber-500/15 text-amber-300 ring-amber-500/30" },
     complete: { label: "Complete", cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" },
