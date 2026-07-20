@@ -230,6 +230,45 @@ export type Database = {
         }
         Relationships: []
       }
+      lucky_spin_entries: {
+        Row: {
+          bonus: number
+          created_at: string
+          created_by: string | null
+          id: string
+          iso_date: string | null
+          processed_at: string | null
+          status: string
+          ticket: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          iso_date?: string | null
+          processed_at?: string | null
+          status?: string
+          ticket: string
+          updated_at?: string
+          username?: string
+        }
+        Update: {
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          iso_date?: string | null
+          processed_at?: string | null
+          status?: string
+          ticket?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
