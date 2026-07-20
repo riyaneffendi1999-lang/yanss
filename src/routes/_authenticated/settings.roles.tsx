@@ -166,6 +166,7 @@ function RolesPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <RefreshButton queryKeys={[["role-page-access"]]} />
           <Button variant="outline" onClick={reset} disabled={isLoading || saveMut.isPending}>
             <RotateCcw className="mr-2 h-4 w-4" /> Reset Default
           </Button>
