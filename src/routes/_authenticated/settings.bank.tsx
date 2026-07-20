@@ -66,6 +66,7 @@ const emptyForm = () => ({
 
 function ManageBankPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<"all" | Channel>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
