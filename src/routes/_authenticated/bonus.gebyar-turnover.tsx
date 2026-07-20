@@ -381,7 +381,7 @@ function GebyarTurnoverPage() {
                   {claimPageRows.map((r) => (
                     <tr key={r.id} className="border-t border-border/50 hover:bg-secondary/30">
                       <td className="px-4 py-2 text-xs text-muted-foreground">
-                        {new Date(r.claimed_at).toLocaleString("id-ID")}
+                        {new Date(r.claimed_at ?? r.created_at).toLocaleString("id-ID")}
                       </td>
                       <td className="px-4 py-2 font-semibold text-primary">{r.username}</td>
                       <td className="px-4 py-2 text-right font-mono text-xs">{num(r.turnover)}</td>
