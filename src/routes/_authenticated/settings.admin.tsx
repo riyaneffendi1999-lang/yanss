@@ -174,10 +174,13 @@ function ManageAdminPage() {
         title="Manage Admin"
         description="Kelola daftar admin, tingkatan role, dan status akses."
         actions={
-          <Button onClick={() => setOpenCreate(true)} className="gap-2">
-            <UserPlus className="h-4 w-4" />
-            Tambah Admin
-          </Button>
+          <>
+            <RefreshButton queryKeys={[["admins"]]} />
+            <Button onClick={() => setOpenCreate(true)} className="gap-2">
+              <UserPlus className="h-4 w-4" />
+              Tambah Admin
+            </Button>
+          </>
         }
       />
 
