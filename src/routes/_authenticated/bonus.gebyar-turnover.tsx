@@ -136,10 +136,16 @@ function GebyarTurnoverPage() {
     },
   });
 
-  const inputRows = useMemo(
-    () => allRows.filter((r) => r.status === "input" && r.period_month === periodMonth && r.period_year === periodYear),
-    [allRows, periodMonth, periodYear],
-  );
+  const inputRows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return allRows.filter(
+      (r) =>
+        r.status === "input" &&
+        r.period_month === periodMonth &&
+        r.period_year === periodYear &&
+        (q === "" || r.username.toLowerCase().includes(q)),
+    );
+  }, [allRows, periodMonth, periodYear, search]);
   const claimRows = useMemo(
     () =>
       allRows.filter((r) => r.status === "claimed" && r.period_month === periodMonth && r.period_year === periodYear),
