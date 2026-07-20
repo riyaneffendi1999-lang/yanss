@@ -33,7 +33,7 @@ function KamisCeriaPage() {
   const qc = useQueryClient();
   const confirmDelete = useConfirmDelete();
   const askDelete = async (id: string) => {
-    const ok = await confirmDelete({ title: "Hapus klaim ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    const ok = await confirmDelete({ title: "Hapus klaim ini?", description: "Yakin untuk hapus?." });
     if (ok) delMut.mutate(id);
   };
   const [username, setUsername] = useState("");
@@ -125,14 +125,26 @@ function KamisCeriaPage() {
       </motion.div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={<Users className="size-4" />} label="Total Member" value={String(totalMember)} tone="from-sky-500/15 to-sky-500/0 ring-sky-500/25 text-sky-300" />
-        <StatCard icon={<Wallet className="size-4" />} label="Total Inject Bonus" value={`Rp ${totalBonus.toLocaleString("id-ID")}`} tone="from-emerald-500/15 to-emerald-500/0 ring-emerald-500/25 text-emerald-300" />
+        <StatCard
+          icon={<Users className="size-4" />}
+          label="Total Member"
+          value={String(totalMember)}
+          tone="from-sky-500/15 to-sky-500/0 ring-sky-500/25 text-sky-300"
+        />
+        <StatCard
+          icon={<Wallet className="size-4" />}
+          label="Total Inject Bonus"
+          value={`Rp ${totalBonus.toLocaleString("id-ID")}`}
+          tone="from-emerald-500/15 to-emerald-500/0 ring-emerald-500/25 text-emerald-300"
+        />
       </div>
 
       <div className="flex items-start gap-2 rounded-xl border border-amber-500/25 bg-amber-500/5 px-4 py-3 text-xs text-amber-200/90">
         <Info className="mt-0.5 size-4 shrink-0" />
         <div>
-          <b>Syarat Bonus Kamis Ceria:</b> Member dapat melakukan klaim apabila sudah melakukan deposit selama <b>1 minggu</b> dengan minimal akumulasi deposit <b>Rp 1.500.000</b>, ditambah target minimal <b>5 hari aktif deposit</b> dalam seminggu.
+          <b>Syarat Bonus Kamis Ceria:</b> Member dapat melakukan klaim apabila sudah melakukan deposit selama{" "}
+          <b>1 minggu</b> dengan minimal akumulasi deposit <b>Rp 1.500.000</b>, ditambah target minimal{" "}
+          <b>5 hari aktif deposit</b> dalam seminggu.
         </div>
       </div>
 
@@ -141,7 +153,9 @@ function KamisCeriaPage() {
           <Input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAdd();
+            }}
             placeholder="Masukkan username…"
             className="h-9 flex-1 min-w-[240px] bg-secondary/40"
           />
@@ -155,12 +169,21 @@ function KamisCeriaPage() {
             <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Cari username…"
               className="h-9 w-[200px] bg-secondary/40 pl-8"
             />
           </div>
-          <DateRangeSelect value={dateRange} onChange={(v) => { setDateRange(v); setPage(1); }} />
+          <DateRangeSelect
+            value={dateRange}
+            onChange={(v) => {
+              setDateRange(v);
+              setPage(1);
+            }}
+          />
         </div>
 
         <div className="overflow-x-auto">
@@ -177,35 +200,70 @@ function KamisCeriaPage() {
             </thead>
             <tbody>
               {paged.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">Belum ada data untuk periode ini</td></tr>
-              ) : paged.map((r) => (
-                <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
-                  <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.created_at)}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{fmtTime(r.created_at)}</td>
-                  <td className="px-4 py-3 font-medium">{r.username}</td>
-                  <td className="px-4 py-3 text-emerald-300">Rp {Number(r.bonus).toLocaleString("id-ID")}</td>
-                  <td className="px-4 py-3">
-                    <Badge className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300 ring-1 ring-emerald-500/30" variant="secondary">Complete</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button size="icon" variant="ghost" className="size-8 text-destructive hover:bg-destructive/10" onClick={() => askDelete(r.id)}>
-                      <Trash2 className="size-4" />
-                    </Button>
+                <tr>
+                  <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
+                    Belum ada data untuk periode ini
                   </td>
                 </tr>
-              ))}
+              ) : (
+                paged.map((r) => (
+                  <tr key={r.id} className="border-b border-border/40 last:border-0 hover:bg-white/[0.02]">
+                    <td className="px-4 py-3 text-muted-foreground">{fmtDate(r.created_at)}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{fmtTime(r.created_at)}</td>
+                    <td className="px-4 py-3 font-medium">{r.username}</td>
+                    <td className="px-4 py-3 text-emerald-300">Rp {Number(r.bonus).toLocaleString("id-ID")}</td>
+                    <td className="px-4 py-3">
+                      <Badge
+                        className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs text-emerald-300 ring-1 ring-emerald-500/30"
+                        variant="secondary"
+                      >
+                        Complete
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-8 text-destructive hover:bg-destructive/10"
+                        onClick={() => askDelete(r.id)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
           <span>
-            Showing {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1} to {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} entries
+            Showing {filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1} to{" "}
+            {Math.min(currentPage * PAGE_SIZE, filtered.length)} of {filtered.length} entries
           </span>
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" className="h-7" disabled={currentPage <= 1} onClick={() => setPage(currentPage - 1)}>‹</Button>
-            <Button size="sm" className="h-7 min-w-7 bg-primary text-primary-foreground">{currentPage}</Button>
-            <Button size="sm" variant="ghost" className="h-7" disabled={currentPage >= totalPages} onClick={() => setPage(currentPage + 1)}>›</Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7"
+              disabled={currentPage <= 1}
+              onClick={() => setPage(currentPage - 1)}
+            >
+              ‹
+            </Button>
+            <Button size="sm" className="h-7 min-w-7 bg-primary text-primary-foreground">
+              {currentPage}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7"
+              disabled={currentPage >= totalPages}
+              onClick={() => setPage(currentPage + 1)}
+            >
+              ›
+            </Button>
           </div>
         </div>
       </div>
@@ -216,7 +274,9 @@ function KamisCeriaPage() {
 function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: string }) {
   return (
     <div className={cn("rounded-xl bg-gradient-to-br p-4 ring-1", tone)}>
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider opacity-80">{icon} {label}</div>
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider opacity-80">
+        {icon} {label}
+      </div>
       <div className="mt-1 text-2xl font-semibold text-foreground">{value}</div>
     </div>
   );
