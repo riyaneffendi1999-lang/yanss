@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import logoAsset from "@/assets/maxslot88-logo.png.asset.json";
+import logoUrl from "@/assets/maxslot88-logo.png";
 
 const authSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -178,7 +178,7 @@ function AuthPage() {
         {/* Logo */}
         <div className="mb-6 flex justify-center">
           <img
-            src={logoAsset.url}
+            src={logoUrl}
             alt="MaxSlot88"
             className="h-auto w-[280px] select-none"
             style={{ filter: "drop-shadow(0 0 24px rgba(229,9,20,0.35))" }}
