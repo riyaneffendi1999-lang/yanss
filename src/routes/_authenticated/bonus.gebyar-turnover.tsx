@@ -214,8 +214,14 @@ function GebyarTurnoverPage() {
   };
 
   const handleClaim = (id: string) => claimMut.mutate(id);
-  const handleDeleteInput = (id: string) => delMut.mutate(id);
-  const handleDeleteClaim = (id: string) => delMut.mutate(id);
+  const handleDeleteInput = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data turnover ini?", description: "Data akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (ok) delMut.mutate(id);
+  };
+  const handleDeleteClaim = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data claim ini?", description: "Data akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (ok) delMut.mutate(id);
+  };
 
   const inputTotals = useMemo(
     () => ({ members: inputRows.length, bonus: inputRows.reduce((n, r) => n + r.prize_amount, 0) }),
