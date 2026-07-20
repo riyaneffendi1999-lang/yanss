@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
@@ -58,54 +58,29 @@ async function getAdminClient() {
   });
 }
 
-async function assertHead(supabaseAdmin: any, userId: string) {
-  const { data, error } = await supabaseAdmin
+async function assertHeadAccess(supabase: any, userId: string) {
+  const { data, error } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .in("role", ["head", "super_admin"]);
 
-  if (error) {
-    throw new Error(error.message || "Gagal memeriksa role admin");
+  if (!error && data && data.length > 0) {
+    return;
   }
 
-  if (!data || data.length === 0) {
+  const [{ data: isHead, error: headErr }, { data: isSuperAdmin, error: superErr }] = await Promise.all([
+    supabase.rpc("has_role", { _user_id: userId, _role: "head" }),
+    supabase.rpc("has_role", { _user_id: userId, _role: "super_admin" }),
+  ]);
+
+  if (headErr || superErr) {
+    throw new Error(headErr?.message || superErr?.message || "Gagal memeriksa role admin");
+  }
+
+  if (!isHead && !isSuperAdmin) {
     throw new Error("Forbidden: hanya Head yang boleh mengelola admin");
   }
-}
-
-async function requireAdminSession(providedToken?: string) {
-  const request = getRequest();
-  const authHeader = request?.headers?.get("authorization");
-  const fallbackToken = providedToken?.trim();
-
-  if (!fallbackToken && !authHeader?.startsWith("Bearer ")) {
-    throw new Error("Unauthorized: silakan logout lalu login kembali");
-  }
-
-  const token = fallbackToken || authHeader!.replace("Bearer ", "").trim();
-  if (!token) {
-    throw new Error("Unauthorized: token login tidak ditemukan");
-  }
-
-  const { url, publishableKey } = readSupabaseConfig();
-  const authResponse = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
-    headers: {
-      apikey: publishableKey,
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  if (!authResponse.ok) {
-    throw new Error("Unauthorized: sesi login tidak valid, silakan login ulang");
-  }
-
-  const user = (await authResponse.json()) as { id?: string };
-  if (!user.id) {
-    throw new Error("Unauthorized: sesi login tidak valid, silakan login ulang");
-  }
-
-  return { userId: user.id };
 }
 
 function usernameToEmail(username: string) {
@@ -161,14 +136,11 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
 // -----------------------------------------------------------------------------
 // LIST admins (auth: head/super_admin)
 // -----------------------------------------------------------------------------
-const tokenSchema = z.object({ authToken: z.string().optional() }).optional();
-
 export const listAdmins = createServerFn({ method: "POST" })
-  .inputValidator((d) => tokenSchema.parse(d))
-  .handler(async ({ data }) => {
-    const session = await requireAdminSession(data?.authToken);
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertHeadAccess(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
-    await assertHead(supabaseAdmin, session.userId);
 
     const { data: profiles, error: pErr } = await supabaseAdmin
       .from("profiles")
@@ -227,15 +199,14 @@ const createSchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   password: z.string().min(6).max(100),
   role: z.enum(ROLES),
-  authToken: z.string().optional(),
 });
 
 export const createAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => createSchema.parse(d))
-  .handler(async ({ data }) => {
-    const session = await requireAdminSession(data.authToken);
+  .handler(async ({ data, context }) => {
+    await assertHeadAccess(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
-    await assertHead(supabaseAdmin, session.userId);
     const email = usernameToEmail(data.username);
 
     const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
@@ -270,15 +241,14 @@ const updateSchema = z.object({
   role: z.enum(ROLES).optional(),
   is_active: z.boolean().optional(),
   password: z.string().min(6).max(100).optional().or(z.literal("")),
-  authToken: z.string().optional(),
 });
 
 export const updateAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => updateSchema.parse(d))
-  .handler(async ({ data }) => {
-    const session = await requireAdminSession(data.authToken);
+  .handler(async ({ data, context }) => {
+    await assertHeadAccess(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
-    await assertHead(supabaseAdmin, session.userId);
 
     if (data.full_name !== undefined || data.is_active !== undefined) {
       const patch: any = {};
@@ -310,14 +280,14 @@ export const updateAdmin = createServerFn({ method: "POST" })
 // DELETE admin
 // -----------------------------------------------------------------------------
 export const deleteAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ id: z.string().uuid(), authToken: z.string().optional() }).parse(d))
-  .handler(async ({ data }) => {
-    const session = await requireAdminSession(data.authToken);
-    if (data.id === session.userId) {
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    if (data.id === context.userId) {
       throw new Error("Tidak dapat menghapus akun sendiri");
     }
+    await assertHeadAccess(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
-    await assertHead(supabaseAdmin, session.userId);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
