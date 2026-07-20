@@ -164,7 +164,8 @@ function ManageBankPage() {
     }
   }
   async function remove(r: BankRow) {
-    if (!confirm(`Hapus ${r.channel_name}?`)) return;
+    const ok = await confirmDelete({ title: `Hapus ${r.channel_name}?`, description: "Data bank akan dihapus permanen. Tekan Enter untuk konfirmasi." });
+    if (!ok) return;
     try { await deleteMut.mutateAsync(r.id); toast.success(`${r.channel_name} dihapus`); }
     catch (e: unknown) { toast.error("Gagal hapus", { description: (e as Error).message }); }
   }
