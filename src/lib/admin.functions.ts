@@ -6,12 +6,14 @@ const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
 
 function readSupabaseConfig() {
-  const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
+  const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
   const publishableKey =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
+    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
-    throw new Error("Konfigurasi backend belum tersedia. Publish ulang aplikasi lalu refresh halaman.");
+    throw new Error(
+      "Konfigurasi backend belum lengkap. Pastikan SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, VITE_SUPABASE_URL, dan VITE_SUPABASE_PUBLISHABLE_KEY sudah diisi lalu deploy ulang.",
+    );
   }
 
   return { url, publishableKey };
@@ -42,10 +44,15 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 async function getAdminClient() {
   const { createClient } = await import("@supabase/supabase-js");
   const { url } = readSupabaseConfig();
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SB_SECRET_KEY;
 
   if (!serviceKey) {
-    throw new Error("Konfigurasi backend admin belum tersedia. Publish ulang aplikasi lalu refresh halaman.");
+    throw new Error(
+      "Konfigurasi admin belum lengkap. Di Vercel tambahkan SUPABASE_SERVICE_ROLE_KEY atau SUPABASE_SECRET_KEY, lalu deploy ulang.",
+    );
   }
 
   return createClient(url, serviceKey, {
