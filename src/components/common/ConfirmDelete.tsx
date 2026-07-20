@@ -37,7 +37,7 @@ export function ConfirmDeleteProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (open) {
-      // Focus confirm button so Enter triggers deletion
+      // Focus confirm button so Enter / Space triggers deletion
       const t = setTimeout(() => confirmBtnRef.current?.focus(), 50);
       return () => clearTimeout(t);
     }
@@ -49,6 +49,18 @@ export function ConfirmDeleteProvider({ children }: { children: React.ReactNode 
     resolverRef.current = null;
   };
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        handle(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <ConfirmContext.Provider value={confirm}>
       {children}
@@ -58,7 +70,7 @@ export function ConfirmDeleteProvider({ children }: { children: React.ReactNode 
             <AlertDialogTitle>{opts.title ?? "Hapus data ini?"}</AlertDialogTitle>
             <AlertDialogDescription>
               {opts.description ??
-                "Tindakan ini tidak dapat dibatalkan. Tekan Enter untuk menghapus."}
+                "Tindakan ini tidak dapat dibatalkan. Tekan Enter atau Spasi untuk menghapus."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
