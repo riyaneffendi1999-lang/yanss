@@ -148,7 +148,7 @@ function ManageAdminPage() {
     queryFn: async () => {
       try {
         return await listFn();
-      } catch (err) {
+      } catch {
         return listAdminsFromClient();
       }
     },
