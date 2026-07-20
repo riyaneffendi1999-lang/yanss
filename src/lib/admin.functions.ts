@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
@@ -36,36 +37,6 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     headers.set("apikey", supabaseKey);
     return fetch(input, { ...init, headers });
   };
-}
-
-async function requireAdminSession() {
-  const { getRequest } = await import("@tanstack/react-start/server");
-  const { createClient } = await import("@supabase/supabase-js");
-  const { url, publishableKey } = readSupabaseConfig();
-
-  const request = getRequest();
-  const authHeader = request?.headers?.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) throw new Error("Unauthorized");
-
-  const token = authHeader.replace("Bearer ", "");
-  if (!token || token.split(".").length !== 3) throw new Error("Unauthorized");
-
-  const supabase = createClient(url, publishableKey, {
-    global: {
-      fetch: createSupabaseFetch(publishableKey),
-      headers: { Authorization: `Bearer ${token}` },
-    },
-    auth: {
-      storage: undefined,
-      persistSession: false,
-      autoRefreshToken: false,
-    },
-  });
-
-  const { data, error } = await supabase.auth.getClaims(token);
-  if (error || !data?.claims?.sub) throw new Error("Unauthorized");
-
-  return { supabase, userId: data.claims.sub };
 }
 
 async function getAdminClient() {
@@ -153,8 +124,8 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
 // LIST admins (auth: head/super_admin)
 // -----------------------------------------------------------------------------
 export const listAdmins = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const context = await requireAdminSession();
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
     await assertHead(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
 
@@ -219,8 +190,8 @@ const createSchema = z.object({
 
 export const createAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => createSchema.parse(d))
-  .handler(async ({ data }) => {
-    const context = await requireAdminSession();
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
     await assertHead(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
     const email = usernameToEmail(data.username);
@@ -261,8 +232,8 @@ const updateSchema = z.object({
 
 export const updateAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => updateSchema.parse(d))
-  .handler(async ({ data }) => {
-    const context = await requireAdminSession();
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
     await assertHead(context.supabase, context.userId);
     const supabaseAdmin = await getAdminClient();
 
@@ -297,8 +268,8 @@ export const updateAdmin = createServerFn({ method: "POST" })
 // -----------------------------------------------------------------------------
 export const deleteAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
-  .handler(async ({ data }) => {
-    const context = await requireAdminSession();
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ data, context }) => {
     await assertHead(context.supabase, context.userId);
     if (data.id === context.userId) {
       throw new Error("Tidak dapat menghapus akun sendiri");
