@@ -32,6 +32,7 @@ import {
 } from "recharts";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -287,7 +288,10 @@ function DashboardPage() {
         title="Dashboard"
         description="Ringkasan operasional realtime dari seluruh channel"
         actions={
-          <DateRangeSelect value={dateRange} onChange={setDateRange} />
+          <>
+            <DateRangeSelect value={dateRange} onChange={setDateRange} />
+            <RefreshButton queryKeys={[["dashboard-deposits"], ["dashboard-banks"], ["dashboard-activity"]]} />
+          </>
         }
       />
 

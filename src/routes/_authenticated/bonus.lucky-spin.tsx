@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { useConfirmDelete } from "@/components/common/ConfirmDelete";
+import { RefreshButton } from "@/components/common/RefreshButton";
 
 export const Route = createFileRoute("/_authenticated/bonus/lucky-spin")({
   head: () => ({ meta: [{ title: "Lucky Spin — Admin Console" }] }),
@@ -236,10 +237,11 @@ function LuckySpinPage() {
         <div className="grid size-12 place-items-center rounded-xl bg-gradient-to-br from-amber-500/20 to-primary/20 ring-1 ring-amber-500/30">
           <Sparkles className="size-6 text-amber-400" />
         </div>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-semibold tracking-tight">Lucky Spin</h1>
           <p className="text-sm text-muted-foreground">Data kiri = input baru • Data kanan = sudah Complete</p>
         </div>
+        <RefreshButton queryKeys={[QK]} />
       </motion.div>
 
       <div className="grid items-start gap-6 xl:grid-cols-2">

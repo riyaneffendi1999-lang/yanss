@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { RefreshButton } from "@/components/common/RefreshButton";
 
 export const Route = createFileRoute("/_authenticated/settings/roles")({
   head: () => ({ meta: [{ title: "Role & Akses — Admin Console" }] }),
@@ -165,6 +166,7 @@ function RolesPage() {
           </p>
         </div>
         <div className="flex gap-2">
+          <RefreshButton queryKeys={[["role-page-access"]]} />
           <Button variant="outline" onClick={reset} disabled={isLoading || saveMut.isPending}>
             <RotateCcw className="mr-2 h-4 w-4" /> Reset Default
           </Button>

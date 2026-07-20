@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/settings/bank")({
@@ -178,8 +179,12 @@ function ManageBankPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Manage Bank</h1>
           <p className="text-sm text-muted-foreground">Kelola bank, e-money & pulsa: saldo awal, status online/offline, dan limit harian.</p>
         </div>
-        <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Tambah Metode</Button>
+        <div className="flex items-center gap-2">
+          <RefreshButton queryKeys={[["bank_accounts"]]} />
+          <Button onClick={openCreate}><Plus className="mr-2 h-4 w-4" /> Tambah Metode</Button>
+        </div>
       </div>
+
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Total Metode" value={String(stats.total)} />

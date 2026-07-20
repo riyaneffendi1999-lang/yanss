@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UserCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -28,7 +29,7 @@ function ProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Profile" description="Detail akun admin Anda" />
+      <PageHeader title="Profile" description="Detail akun admin Anda" actions={<RefreshButton queryKeys={[["me"]]} />} />
       <div className="glass-panel soft-shadow max-w-2xl rounded-xl p-6">
         {isLoading ? (
           <div className="space-y-3">
