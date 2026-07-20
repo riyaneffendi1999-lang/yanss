@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import logoAsset from "@/assets/maxslot88-logo.png.asset.json";
+import logoUrl from "@/assets/maxslot88-logo.png";
 
 const authSearchSchema = z.object({
   redirect: z.string().optional(),
