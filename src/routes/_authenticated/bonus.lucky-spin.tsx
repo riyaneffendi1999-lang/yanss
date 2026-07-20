@@ -335,7 +335,7 @@ function LuckySpinPage() {
                             size="icon"
                             variant="ghost"
                             className="size-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteMut.mutate(row.id)}
+                            onClick={() => askDelete(row.id)}
                             title="Hapus"
                           >
                             <Trash2 className="size-4" />
@@ -446,7 +446,7 @@ function LuckySpinPage() {
                             size="icon"
                             variant="ghost"
                             className="size-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteMut.mutate(r.id)}
+                            onClick={() => askDelete(r.id)}
                           >
                             <Trash2 className="size-4" />
                           </Button>
