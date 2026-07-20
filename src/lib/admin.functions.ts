@@ -6,9 +6,9 @@ const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
 
 function readSupabaseConfig() {
-  const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
+  const url = import.meta.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL;
   const publishableKey =
-    process.env.SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !publishableKey) {
     throw new Error("Konfigurasi backend belum tersedia. Publish ulang aplikasi lalu refresh halaman.");
@@ -74,15 +74,16 @@ async function assertHead(supabaseAdmin: any, userId: string) {
   }
 }
 
-async function requireAdminSession() {
+async function requireAdminSession(providedToken?: string) {
   const request = getRequest();
   const authHeader = request?.headers?.get("authorization");
+  const fallbackToken = providedToken?.trim();
 
-  if (!authHeader?.startsWith("Bearer ")) {
+  if (!fallbackToken && !authHeader?.startsWith("Bearer ")) {
     throw new Error("Unauthorized: silakan logout lalu login kembali");
   }
 
-  const token = authHeader.replace("Bearer ", "").trim();
+  const token = fallbackToken || authHeader!.replace("Bearer ", "").trim();
   if (!token) {
     throw new Error("Unauthorized: token login tidak ditemukan");
   }
@@ -160,9 +161,12 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
 // -----------------------------------------------------------------------------
 // LIST admins (auth: head/super_admin)
 // -----------------------------------------------------------------------------
-export const listAdmins = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const session = await requireAdminSession();
+const tokenSchema = z.object({ authToken: z.string().optional() }).optional();
+
+export const listAdmins = createServerFn({ method: "POST" })
+  .inputValidator((d) => tokenSchema.parse(d))
+  .handler(async ({ data }) => {
+    const session = await requireAdminSession(data?.authToken);
     const supabaseAdmin = await getAdminClient();
     await assertHead(supabaseAdmin, session.userId);
 
@@ -223,12 +227,13 @@ const createSchema = z.object({
   full_name: z.string().trim().min(2).max(100),
   password: z.string().min(6).max(100),
   role: z.enum(ROLES),
+  authToken: z.string().optional(),
 });
 
 export const createAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => createSchema.parse(d))
   .handler(async ({ data }) => {
-    const session = await requireAdminSession();
+    const session = await requireAdminSession(data.authToken);
     const supabaseAdmin = await getAdminClient();
     await assertHead(supabaseAdmin, session.userId);
     const email = usernameToEmail(data.username);
@@ -265,12 +270,13 @@ const updateSchema = z.object({
   role: z.enum(ROLES).optional(),
   is_active: z.boolean().optional(),
   password: z.string().min(6).max(100).optional().or(z.literal("")),
+  authToken: z.string().optional(),
 });
 
 export const updateAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => updateSchema.parse(d))
   .handler(async ({ data }) => {
-    const session = await requireAdminSession();
+    const session = await requireAdminSession(data.authToken);
     const supabaseAdmin = await getAdminClient();
     await assertHead(supabaseAdmin, session.userId);
 
@@ -304,9 +310,9 @@ export const updateAdmin = createServerFn({ method: "POST" })
 // DELETE admin
 // -----------------------------------------------------------------------------
 export const deleteAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
+  .inputValidator((d) => z.object({ id: z.string().uuid(), authToken: z.string().optional() }).parse(d))
   .handler(async ({ data }) => {
-    const session = await requireAdminSession();
+    const session = await requireAdminSession(data.authToken);
     if (data.id === session.userId) {
       throw new Error("Tidak dapat menghapus akun sendiri");
     }
