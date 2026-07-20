@@ -55,6 +55,11 @@ function todayISO() {
 
 function LuckySpinPage() {
   const qc = useQueryClient();
+  const confirmDelete = useConfirmDelete();
+  const askDelete = async (id: string) => {
+    const ok = await confirmDelete({ title: "Hapus data ini?", description: "Tekan Enter untuk konfirmasi hapus." });
+    if (ok) deleteMut.mutate(id);
+  };
   const [pasteValue, setPasteValue] = useState("");
   const [search, setSearch] = useState("");
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
