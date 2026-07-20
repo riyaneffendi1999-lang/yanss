@@ -24,7 +24,7 @@ const ConfirmContext = createContext<Ctx | null>(null);
 export function ConfirmDeleteProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [opts, setOpts] = useState<ConfirmOptions>({});
-  const resolverRef = useRef<(v: boolean) => void>();
+  const resolverRef = useRef<((v: boolean) => void) | null>(null);
   const confirmBtnRef = useRef<HTMLButtonElement>(null);
 
   const confirm: Ctx = useCallback((o) => {
