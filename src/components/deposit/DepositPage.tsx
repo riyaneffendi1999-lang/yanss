@@ -946,7 +946,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                 <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Saldo akhir saat ini
                 </div>
-                <div className="mt-1 font-semibold">{rp(Number(formAccount?.balance ?? 0))}</div>
+                <div className="mt-1 font-semibold">{rp(formAccountBalance)}</div>
               </div>
               <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
                 <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-400">
