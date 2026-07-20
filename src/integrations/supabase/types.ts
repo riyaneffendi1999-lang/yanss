@@ -161,6 +161,75 @@ export type Database = {
         }
         Relationships: []
       }
+      gebyar_turnover_entries: {
+        Row: {
+          claimed_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          period_month: number
+          period_year: number
+          prize_amount: number
+          prize_text: string
+          status: string
+          turnover: number
+          username: string
+        }
+        Insert: {
+          claimed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_month: number
+          period_year: number
+          prize_amount?: number
+          prize_text?: string
+          status?: string
+          turnover?: number
+          username: string
+        }
+        Update: {
+          claimed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period_month?: number
+          period_year?: number
+          prize_amount?: number
+          prize_text?: string
+          status?: string
+          turnover?: number
+          username?: string
+        }
+        Relationships: []
+      }
+      kamis_ceria_claims: {
+        Row: {
+          bonus: number
+          created_at: string
+          created_by: string | null
+          id: string
+          iso_date: string
+          username: string
+        }
+        Insert: {
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          iso_date?: string
+          username: string
+        }
+        Update: {
+          bonus?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          iso_date?: string
+          username?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
