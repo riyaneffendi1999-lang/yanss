@@ -32,6 +32,7 @@ import {
 } from "recharts";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
