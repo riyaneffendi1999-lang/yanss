@@ -256,13 +256,27 @@ function GebyarTurnoverPage() {
       <div className="grid gap-4 lg:grid-cols-2 items-start">
         {/* LEFT — Input */}
         <section className="glass-panel soft-shadow rounded-xl">
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Input Data Turnover
             </div>
-            <Button size="sm" variant="secondary" onClick={() => setPasteOpen(true)} className="h-8 gap-1.5 text-xs">
-              <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
-            </Button>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setInputPage(1);
+                  }}
+                  placeholder="Cari username…"
+                  className="h-8 w-[180px] bg-secondary/40 pl-7 text-xs"
+                />
+              </div>
+              <Button size="sm" variant="secondary" onClick={() => setPasteOpen(true)} className="h-8 gap-1.5 text-xs">
+                <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
+              </Button>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 p-4">
