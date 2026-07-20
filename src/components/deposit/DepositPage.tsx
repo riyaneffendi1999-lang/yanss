@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export type DepositChannelKind = "bank" | "emoney" | "pulsa";
 
