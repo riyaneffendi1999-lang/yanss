@@ -475,7 +475,24 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
 
   const formAccount = bankAccounts.find((a) => a.id === form.account_id);
   const formAmountNum = Number((form.amount || "").replace(/[^\d.-]/g, "")) || 0;
-  const saldoSetelah = (formAccount?.balance ?? 0) + formAmountNum;
+  // Live balance for the selected form account: opening + approved + unik + pending - outflow - fee
+  const formAccountBalance = useMemo(() => {
+    if (!formAccount) return 0;
+    const scoped = rows.filter((r) => r.account_id === formAccount.id);
+    const sumBy = (st: DepositStatus) =>
+      scoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
+    return (
+      Number(formAccount.opening_balance ?? 0) +
+      sumBy("Approved") +
+      sumBy("Unik") +
+      sumBy("Pending") -
+      sumBy(OUTFLOW_STATUS) -
+      sumBy("Biaya admin")
+    );
+  }, [rows, formAccount, OUTFLOW_STATUS]);
+  const formDelta =
+    form.status === OUTFLOW_STATUS || form.status === "Biaya admin" ? -formAmountNum : formAmountNum;
+  const saldoSetelah = formAccountBalance + formDelta;
 
   const onAddSubmit = async () => {
     if (!form.amount || formAmountNum <= 0) {
@@ -929,7 +946,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
                 <div className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   Saldo akhir saat ini
                 </div>
-                <div className="mt-1 font-semibold">{rp(Number(formAccount?.balance ?? 0))}</div>
+                <div className="mt-1 font-semibold">{rp(formAccountBalance)}</div>
               </div>
               <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-3">
                 <div className="text-[10px] font-medium uppercase tracking-wider text-emerald-400">
