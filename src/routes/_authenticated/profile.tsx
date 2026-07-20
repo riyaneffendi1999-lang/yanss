@@ -29,7 +29,7 @@ function ProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Profile" description="Detail akun admin Anda" />
+      <PageHeader title="Profile" description="Detail akun admin Anda" actions={<RefreshButton queryKeys={[["me"]]} />} />
       <div className="glass-panel soft-shadow max-w-2xl rounded-xl p-6">
         {isLoading ? (
           <div className="space-y-3">
