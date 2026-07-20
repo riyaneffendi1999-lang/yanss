@@ -195,17 +195,22 @@ function GebyarTurnoverPage() {
     bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
   }), [state.input]);
 
+  const filteredClaims = useMemo(
+    () => state.claims.filter((r) => r.period_month === state.period_month && r.period_year === state.period_year),
+    [state.claims, state.period_month, state.period_year],
+  );
+
   const claimTotals = useMemo(() => ({
-    members: state.claims.length,
-    bonus: state.claims.reduce((n, r) => n + r.prize_amount, 0),
-  }), [state.claims]);
+    members: filteredClaims.length,
+    bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0),
+  }), [filteredClaims]);
 
   const inputPageCount = Math.max(1, Math.ceil(state.input.length / PAGE_SIZE));
-  const claimPageCount = Math.max(1, Math.ceil(state.claims.length / PAGE_SIZE));
+  const claimPageCount = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
   const inputPageSafe = Math.min(inputPage, inputPageCount);
   const claimPageSafe = Math.min(claimPage, claimPageCount);
   const inputPageRows = state.input.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
-  const claimPageRows = state.claims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
+  const claimPageRows = filteredClaims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
 
   useEffect(() => { if (inputPage > inputPageCount) setInputPage(inputPageCount); }, [inputPageCount, inputPage]);
   useEffect(() => { if (claimPage > claimPageCount) setClaimPage(claimPageCount); }, [claimPageCount, claimPage]);
