@@ -287,7 +287,10 @@ function DashboardPage() {
         title="Dashboard"
         description="Ringkasan operasional realtime dari seluruh channel"
         actions={
-          <DateRangeSelect value={dateRange} onChange={setDateRange} />
+          <>
+            <DateRangeSelect value={dateRange} onChange={setDateRange} />
+            <RefreshButton queryKeys={[["dashboard-deposits"], ["dashboard-banks"], ["dashboard-activity"]]} />
+          </>
         }
       />
 
