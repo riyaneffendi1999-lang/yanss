@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/bonus/lucky-spin")({
   head: () => ({ meta: [{ title: "Lucky Spin — Admin Console" }] }),
