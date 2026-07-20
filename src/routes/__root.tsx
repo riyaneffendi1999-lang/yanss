@@ -132,8 +132,10 @@ function RootComponent() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <Outlet />
-        <Toaster />
+        <ConfirmDeleteProvider>
+          <Outlet />
+          <Toaster />
+        </ConfirmDeleteProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
