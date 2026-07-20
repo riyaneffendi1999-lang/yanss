@@ -179,7 +179,7 @@ function GebyarTurnoverPage() {
       return {
         ...s,
         input: s.input.filter((r) => r.id !== id),
-        claims: [{ ...row, claimed_at: new Date().toISOString() }, ...s.claims],
+        claims: [{ ...row, claimed_at: new Date().toISOString(), period_month: s.period_month, period_year: s.period_year }, ...s.claims],
       };
     });
   };
