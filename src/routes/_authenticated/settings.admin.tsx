@@ -10,6 +10,7 @@ import { Crown, Eye, EyeOff, Loader2, Pencil, Plus, Search, ShieldCheck, Trash2,
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { RefreshButton } from "@/components/common/RefreshButton";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,6 +77,40 @@ const ROLE_OPTIONS = [
 
 type AdminRow = Awaited<ReturnType<typeof listAdmins>>[number];
 
+async function listAdminsFromClient(): Promise<AdminRow[]> {
+  const { data: profiles, error: pErr } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, is_active, created_at, updated_at")
+    .order("created_at", { ascending: false });
+  if (pErr) throw pErr;
+
+  const { data: roles, error: rErr } = await supabase
+    .from("user_roles")
+    .select("user_id, role");
+  if (rErr) throw rErr;
+
+  const rolesByUser = new Map<string, string[]>();
+  for (const r of roles ?? []) {
+    const arr = rolesByUser.get(r.user_id) ?? [];
+    arr.push(r.role as string);
+    rolesByUser.set(r.user_id, arr);
+  }
+
+  return (profiles ?? []).map((p) => {
+    const username = (p.full_name ?? "admin").trim().toLowerCase().replace(/\s+/g, ".");
+    return {
+      id: p.id,
+      username,
+      email: "",
+      full_name: p.full_name,
+      is_active: p.is_active,
+      created_at: p.created_at,
+      last_sign_in_at: null,
+      roles: rolesByUser.get(p.id) ?? [],
+    };
+  });
+}
+
 const createFormSchema = z.object({
   username: z
     .string()
@@ -110,7 +145,13 @@ function ManageAdminPage() {
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admins"],
-    queryFn: () => listFn(),
+    queryFn: async () => {
+      try {
+        return await listFn();
+      } catch {
+        return listAdminsFromClient();
+      }
+    },
   });
 
   const rows = useMemo(() => {
