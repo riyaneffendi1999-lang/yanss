@@ -38,7 +38,7 @@ type InputRow = {
   prize_amount: number; // 0 for item prizes
 };
 
-type ClaimRow = InputRow & { claimed_at: string };
+type ClaimRow = InputRow & { claimed_at: string; period_month: number; period_year: number };
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -179,7 +179,7 @@ function GebyarTurnoverPage() {
       return {
         ...s,
         input: s.input.filter((r) => r.id !== id),
-        claims: [{ ...row, claimed_at: new Date().toISOString() }, ...s.claims],
+        claims: [{ ...row, claimed_at: new Date().toISOString(), period_month: s.period_month, period_year: s.period_year }, ...s.claims],
       };
     });
   };
@@ -195,17 +195,22 @@ function GebyarTurnoverPage() {
     bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
   }), [state.input]);
 
+  const filteredClaims = useMemo(
+    () => state.claims.filter((r) => r.period_month === state.period_month && r.period_year === state.period_year),
+    [state.claims, state.period_month, state.period_year],
+  );
+
   const claimTotals = useMemo(() => ({
-    members: state.claims.length,
-    bonus: state.claims.reduce((n, r) => n + r.prize_amount, 0),
-  }), [state.claims]);
+    members: filteredClaims.length,
+    bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0),
+  }), [filteredClaims]);
 
   const inputPageCount = Math.max(1, Math.ceil(state.input.length / PAGE_SIZE));
-  const claimPageCount = Math.max(1, Math.ceil(state.claims.length / PAGE_SIZE));
+  const claimPageCount = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
   const inputPageSafe = Math.min(inputPage, inputPageCount);
   const claimPageSafe = Math.min(claimPage, claimPageCount);
   const inputPageRows = state.input.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
-  const claimPageRows = state.claims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
+  const claimPageRows = filteredClaims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
 
   useEffect(() => { if (inputPage > inputPageCount) setInputPage(inputPageCount); }, [inputPageCount, inputPage]);
   useEffect(() => { if (claimPage > claimPageCount) setClaimPage(claimPageCount); }, [claimPageCount, claimPage]);
@@ -316,9 +321,12 @@ function GebyarTurnoverPage() {
 
         {/* RIGHT — Claim */}
         <section className="glass-panel soft-shadow rounded-xl">
-          <div className="border-b border-border/60 px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Data Claim
+            </div>
+            <div className="text-[11px] font-medium text-muted-foreground">
+              Periode: <span className="text-foreground">{MONTHS[state.period_month - 1]} {state.period_year}</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 p-4">
@@ -326,9 +334,9 @@ function GebyarTurnoverPage() {
             <MiniStat tone="emerald" label="Total Claim Hadiah" value={rp(claimTotals.bonus)} icon={<Trophy className="h-4 w-4" />} />
           </div>
 
-          {state.claims.length === 0 ? (
+          {filteredClaims.length === 0 ? (
             <div className="border-t border-border/60 p-10 text-center text-sm text-muted-foreground">
-              Belum ada claim
+              Belum ada claim untuk periode ini
             </div>
           ) : (
             <div className="overflow-x-auto border-t border-border/60">
@@ -368,7 +376,7 @@ function GebyarTurnoverPage() {
                   ))}
                 </tbody>
               </table>
-              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={state.claims.length} />
+              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={filteredClaims.length} />
             </div>
           )}
         </section>
