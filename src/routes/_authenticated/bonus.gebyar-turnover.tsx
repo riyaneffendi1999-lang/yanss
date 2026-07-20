@@ -8,13 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -41,8 +35,18 @@ type InputRow = {
 type ClaimRow = InputRow & { claimed_at: string; period_month: number; period_year: number };
 
 const MONTHS = [
-  "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-  "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+  "Januari",
+  "Februari",
+  "Maret",
+  "April",
+  "Mei",
+  "Juni",
+  "Juli",
+  "Agustus",
+  "September",
+  "Oktober",
+  "November",
+  "Desember",
 ];
 
 const PAGE_SIZE = 10;
@@ -57,7 +61,10 @@ const num = (n: number) => n.toLocaleString("id-ID");
  */
 export function parseGebyarPaste(text: string): InputRow[] {
   const out: InputRow[] = [];
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   // Line-based parsing (tab or multi-space separated)
   const lineRe = /^([A-Za-z][A-Za-z0-9_.-]*)\s+([\d,]+(?:\.\d+)?)\s+(.+)$/;
@@ -179,31 +186,38 @@ function GebyarTurnoverPage() {
       return {
         ...s,
         input: s.input.filter((r) => r.id !== id),
-        claims: [{ ...row, claimed_at: new Date().toISOString(), period_month: s.period_month, period_year: s.period_year }, ...s.claims],
+        claims: [
+          { ...row, claimed_at: new Date().toISOString(), period_month: s.period_month, period_year: s.period_year },
+          ...s.claims,
+        ],
       };
     });
   };
 
-  const handleDeleteInput = (id: string) =>
-    setState((s) => ({ ...s, input: s.input.filter((r) => r.id !== id) }));
+  const handleDeleteInput = (id: string) => setState((s) => ({ ...s, input: s.input.filter((r) => r.id !== id) }));
 
-  const handleDeleteClaim = (id: string) =>
-    setState((s) => ({ ...s, claims: s.claims.filter((r) => r.id !== id) }));
+  const handleDeleteClaim = (id: string) => setState((s) => ({ ...s, claims: s.claims.filter((r) => r.id !== id) }));
 
-  const inputTotals = useMemo(() => ({
-    members: state.input.length,
-    bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
-  }), [state.input]);
+  const inputTotals = useMemo(
+    () => ({
+      members: state.input.length,
+      bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
+    }),
+    [state.input],
+  );
 
   const filteredClaims = useMemo(
     () => state.claims.filter((r) => r.period_month === state.period_month && r.period_year === state.period_year),
     [state.claims, state.period_month, state.period_year],
   );
 
-  const claimTotals = useMemo(() => ({
-    members: filteredClaims.length,
-    bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0),
-  }), [filteredClaims]);
+  const claimTotals = useMemo(
+    () => ({
+      members: filteredClaims.length,
+      bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0),
+    }),
+    [filteredClaims],
+  );
 
   const inputPageCount = Math.max(1, Math.ceil(state.input.length / PAGE_SIZE));
   const claimPageCount = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
@@ -212,15 +226,16 @@ function GebyarTurnoverPage() {
   const inputPageRows = state.input.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
   const claimPageRows = filteredClaims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
 
-  useEffect(() => { if (inputPage > inputPageCount) setInputPage(inputPageCount); }, [inputPageCount, inputPage]);
-  useEffect(() => { if (claimPage > claimPageCount) setClaimPage(claimPageCount); }, [claimPageCount, claimPage]);
+  useEffect(() => {
+    if (inputPage > inputPageCount) setInputPage(inputPageCount);
+  }, [inputPageCount, inputPage]);
+  useEffect(() => {
+    if (claimPage > claimPageCount) setClaimPage(claimPageCount);
+  }, [claimPageCount, claimPage]);
 
   return (
     <div>
-      <PageHeader
-        title="Gebyar Turnover"
-        description="Data kiri = input baru • Data kanan = sudah Claim"
-      />
+      <PageHeader title="Gebyar Turnover" description="Data kiri = input baru • Data kanan = sudah Claim" />
 
       <div className="grid gap-4 lg:grid-cols-2 items-start">
         {/* LEFT — Input */}
@@ -229,12 +244,7 @@ function GebyarTurnoverPage() {
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
               Input Data Turnover
             </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => setPasteOpen(true)}
-              className="h-8 gap-1.5 text-xs"
-            >
+            <Button size="sm" variant="secondary" onClick={() => setPasteOpen(true)} className="h-8 gap-1.5 text-xs">
               <ClipboardPaste className="h-3.5 w-3.5" /> Paste Data
             </Button>
           </div>
@@ -246,10 +256,19 @@ function GebyarTurnoverPage() {
 
           <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <Select value={String(state.period_month)} onValueChange={(v) => setState((s) => ({ ...s, period_month: Number(v) }))}>
-                <SelectTrigger className="h-7 w-[110px] bg-secondary/40 text-xs"><SelectValue /></SelectTrigger>
+              <Select
+                value={String(state.period_month)}
+                onValueChange={(v) => setState((s) => ({ ...s, period_month: Number(v) }))}
+              >
+                <SelectTrigger className="h-7 w-[110px] bg-secondary/40 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {MONTHS.map((mn, i) => (<SelectItem key={mn} value={String(i + 1)}>{mn}</SelectItem>))}
+                  {MONTHS.map((mn, i) => (
+                    <SelectItem key={mn} value={String(i + 1)}>
+                      {mn}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Input
@@ -287,9 +306,11 @@ function GebyarTurnoverPage() {
                         <td className="px-4 py-2 font-semibold text-primary">{r.username}</td>
                         <td className="px-4 py-2 text-right font-mono text-xs">{num(r.turnover)}</td>
                         <td className="px-4 py-2 text-xs">
-                          {r.prize_amount > 0
-                            ? <span className="font-semibold">{rp(r.prize_amount)}</span>
-                            : <span className="text-muted-foreground">{r.prize_text}</span>}
+                          {r.prize_amount > 0 ? (
+                            <span className="font-semibold">{rp(r.prize_amount)}</span>
+                          ) : (
+                            <span className="text-muted-foreground">{r.prize_text}</span>
+                          )}
                         </td>
                         <td className="px-4 py-2 text-right">
                           <div className="inline-flex items-center gap-1">
@@ -313,7 +334,12 @@ function GebyarTurnoverPage() {
                     ))}
                   </tbody>
                 </table>
-                <Pagination page={inputPageSafe} pageCount={inputPageCount} onChange={setInputPage} total={state.input.length} />
+                <Pagination
+                  page={inputPageSafe}
+                  pageCount={inputPageCount}
+                  onChange={setInputPage}
+                  total={state.input.length}
+                />
               </div>
             )}
           </div>
@@ -326,12 +352,25 @@ function GebyarTurnoverPage() {
               Data Claim
             </div>
             <div className="text-[11px] font-medium text-muted-foreground">
-              Periode: <span className="text-foreground">{MONTHS[state.period_month - 1]} {state.period_year}</span>
+              Periode:{" "}
+              <span className="text-foreground">
+                {MONTHS[state.period_month - 1]} {state.period_year}
+              </span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 p-4">
-            <MiniStat tone="sky" label="Total Claim Member" value={`${claimTotals.members} member`} icon={<Users className="h-4 w-4" />} />
-            <MiniStat tone="emerald" label="Total Claim Hadiah" value={rp(claimTotals.bonus)} icon={<Trophy className="h-4 w-4" />} />
+            <MiniStat
+              tone="sky"
+              label="Total Claim Member"
+              value={`${claimTotals.members} member`}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <MiniStat
+              tone="emerald"
+              label="Total Claim Hadiah"
+              value={rp(claimTotals.bonus)}
+              icon={<Trophy className="h-4 w-4" />}
+            />
           </div>
 
           {filteredClaims.length === 0 ? (
@@ -361,7 +400,7 @@ function GebyarTurnoverPage() {
                       <td className="px-4 py-2 text-right font-mono text-xs">{num(r.turnover)}</td>
                       <td className="px-4 py-2 text-xs text-muted-foreground">{r.prize_text}</td>
                       <td className="px-4 py-2 text-right font-semibold">
-                        {r.prize_amount > 0 ? rp(r.prize_amount) : <span className="text-muted-foreground">Barang</span>}
+                        {r.prize_amount > 0 ? rp(r.prize_amount) : <span className="text-muted-foreground">Rp 0</span>}
                       </td>
                       <td className="px-4 py-2 text-right">
                         <button
@@ -376,7 +415,12 @@ function GebyarTurnoverPage() {
                   ))}
                 </tbody>
               </table>
-              <Pagination page={claimPageSafe} pageCount={claimPageCount} onChange={setClaimPage} total={filteredClaims.length} />
+              <Pagination
+                page={claimPageSafe}
+                pageCount={claimPageCount}
+                onChange={setClaimPage}
+                total={filteredClaims.length}
+              />
             </div>
           )}
         </section>
@@ -388,8 +432,9 @@ function GebyarTurnoverPage() {
           <DialogHeader>
             <DialogTitle>Paste Data Turnover</DialogTitle>
             <DialogDescription>
-              Tempel data dengan format: <span className="font-mono text-rose-400">username [tab] turnover [tab] hadiah</span>.
-              Hadiah berupa barang otomatis dihitung <b>Rp 0</b>.
+              Tempel data dengan format:{" "}
+              <span className="font-mono text-rose-400">username [tab] turnover [tab] hadiah</span>. Hadiah berupa
+              barang otomatis dihitung <b>Rp 0</b>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2">
@@ -397,14 +442,24 @@ function GebyarTurnoverPage() {
             <Textarea
               value={paste}
               onChange={(e) => setPaste(e.target.value)}
-              placeholder={"noni777\t33,331,437,000\tIPHONE 16 PRO MAX (256 GB)\nmemori88\t9,379,244,800\tRp 10.000.000\nrtanto88\t8,257,596,000\tRp 10.000.000"}
+              placeholder={
+                "noni777\t33,331,437,000\tIPHONE 16 PRO MAX (256 GB)\nmemori88\t9,379,244,800\tRp 10.000.000\nrtanto88\t8,257,596,000\tRp 10.000.000"
+              }
               rows={10}
               className="bg-secondary/40 font-mono text-xs"
               autoFocus
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setPaste(""); setPasteOpen(false); }}>Batal</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setPaste("");
+                setPasteOpen(false);
+              }}
+            >
+              Batal
+            </Button>
             <Button onClick={handleAdd} disabled={!paste.trim()}>
               <Plus className="mr-1.5 h-4 w-4" /> Tambah ke Tabel
             </Button>
@@ -416,12 +471,22 @@ function GebyarTurnoverPage() {
 }
 
 function Pagination({
-  page, pageCount, onChange, total,
-}: { page: number; pageCount: number; onChange: (n: number) => void; total: number }) {
+  page,
+  pageCount,
+  onChange,
+  total,
+}: {
+  page: number;
+  pageCount: number;
+  onChange: (n: number) => void;
+  total: number;
+}) {
   if (total === 0) return null;
   return (
     <div className="flex items-center justify-between border-t border-border/60 px-4 py-2 text-xs text-muted-foreground">
-      <span>Halaman {page} dari {pageCount} • {total} baris</span>
+      <span>
+        Halaman {page} dari {pageCount} • {total} baris
+      </span>
       <div className="inline-flex items-center gap-1">
         <button
           onClick={() => onChange(Math.max(1, page - 1))}
@@ -449,8 +514,16 @@ const TONES = {
 } as const;
 
 function MiniStat({
-  label, value, tone, icon,
-}: { label: string; value: string; tone: keyof typeof TONES; icon?: React.ReactNode }) {
+  label,
+  value,
+  tone,
+  icon,
+}: {
+  label: string;
+  value: string;
+  tone: keyof typeof TONES;
+  icon?: React.ReactNode;
+}) {
   return (
     <div className={cn("rounded-xl border bg-gradient-to-br p-3", TONES[tone])}>
       <div className="flex items-center justify-between text-[10px] uppercase tracking-wider opacity-80">
