@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardPaste, Plus, Trash2, Trophy, Users, Gift, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -18,55 +19,44 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/bonus/gebyar-turnover")({
   head: () => ({ meta: [{ title: "Gebyar Turnover — Admin Console" }] }),
   component: GebyarTurnoverPage,
 });
 
-type InputRow = {
-  id: string;
+type ParsedRow = {
   username: string;
   turnover: number;
   prize_text: string;
-  prize_amount: number; // 0 for item prizes
+  prize_amount: number;
 };
 
-type ClaimRow = InputRow & { claimed_at: string; period_month: number; period_year: number };
+type EntryRow = ParsedRow & {
+  id: string;
+  status: "input" | "claimed";
+  period_month: number;
+  period_year: number;
+  claimed_at: string | null;
+  created_at: string;
+};
 
 const MONTHS = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
+  "Januari","Februari","Maret","April","Mei","Juni",
+  "Juli","Agustus","September","Oktober","November","Desember",
 ];
 
 const PAGE_SIZE = 10;
+const QK = ["gebyar-turnover-entries"] as const;
 
 const rp = (n: number) => "Rp " + n.toLocaleString("id-ID", { maximumFractionDigits: 0 });
 const num = (n: number) => n.toLocaleString("id-ID");
 
-/**
- * Parses tab/space separated turnover paste. Each line = username \t turnover \t prize.
- * Also supports the legacy concatenated format for backward compatibility.
- * Item prizes → amount = 0.
- */
-export function parseGebyarPaste(text: string): InputRow[] {
-  const out: InputRow[] = [];
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
+export function parseGebyarPaste(text: string): ParsedRow[] {
+  const out: ParsedRow[] = [];
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
-  // Line-based parsing (tab or multi-space separated)
   const lineRe = /^([A-Za-z][A-Za-z0-9_.-]*)\s+([\d,]+(?:\.\d+)?)\s+(.+)$/;
   let matchedAny = false;
   for (const line of lines) {
@@ -77,22 +67,12 @@ export function parseGebyarPaste(text: string): InputRow[] {
     const prizeRaw = m[3].trim();
     const money = prizeRaw.match(/Rp\s*([\d.,]+)/i);
     let prize_amount = 0;
-    if (money) {
-      const digits = money[1].replace(/[.,]/g, "");
-      prize_amount = Number(digits) || 0;
-    }
+    if (money) prize_amount = Number(money[1].replace(/[.,]/g, "")) || 0;
     if (!isFinite(turnover)) continue;
-    out.push({
-      id: crypto.randomUUID(),
-      username: m[1],
-      turnover,
-      prize_text: prizeRaw || "—",
-      prize_amount,
-    });
+    out.push({ username: m[1], turnover, prize_text: prizeRaw || "—", prize_amount });
   }
   if (matchedAny) return out;
 
-  // Fallback: concatenated format
   const clean = text.replace(/\s+/g, " ").trim();
   const re = /([A-Za-z][A-Za-z0-9_]*?)(\d{1,3}(?:,\d{3})+)/g;
   const matches: Array<{ user: string; turnover: number; start: number; end: number }> = [];
@@ -108,62 +88,87 @@ export function parseGebyarPaste(text: string): InputRow[] {
     const prizeRaw = clean.slice(cur.end, next?.start ?? clean.length).trim();
     const money = prizeRaw.match(/Rp\s*([\d.,]+)/i);
     let prize_amount = 0;
-    if (money) {
-      const digits = money[1].replace(/[.,]/g, "");
-      prize_amount = Number(digits) || 0;
-    }
-    out.push({
-      id: crypto.randomUUID(),
-      username: cur.user,
-      turnover: cur.turnover,
-      prize_text: prizeRaw || "—",
-      prize_amount,
-    });
+    if (money) prize_amount = Number(money[1].replace(/[.,]/g, "")) || 0;
+    out.push({ username: cur.user, turnover: cur.turnover, prize_text: prizeRaw || "—", prize_amount });
   }
   return out;
 }
 
-const STORAGE_KEY = "gebyar_turnover_state_v1";
-
-type PersistedState = {
-  period_month: number;
-  period_year: number;
-  input: InputRow[];
-  claims: ClaimRow[];
-};
-
-function loadState(): PersistedState {
-  const now = new Date();
-  const fallback: PersistedState = {
-    period_month: now.getMonth() + 1,
-    period_year: now.getFullYear(),
-    input: [],
-    claims: [],
-  };
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return fallback;
-    return { ...fallback, ...JSON.parse(raw) };
-  } catch {
-    return fallback;
-  }
-}
-
 function GebyarTurnoverPage() {
-  const [state, setState] = useState<PersistedState>(loadState);
+  const qc = useQueryClient();
+  const now = new Date();
+  const [periodMonth, setPeriodMonth] = useState(now.getMonth() + 1);
+  const [periodYear, setPeriodYear] = useState(now.getFullYear());
   const [paste, setPaste] = useState("");
   const [pasteOpen, setPasteOpen] = useState(false);
   const [inputPage, setInputPage] = useState(1);
   const [claimPage, setClaimPage] = useState(1);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      /* ignore quota */
-    }
-  }, [state]);
+  const { data: allRows = [] } = useQuery({
+    queryKey: QK,
+    queryFn: async (): Promise<EntryRow[]> => {
+      const { data, error } = await supabase
+        .from("gebyar_turnover_entries")
+        .select("id,username,turnover,prize_text,prize_amount,status,period_month,period_year,claimed_at,created_at")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map((r) => ({
+        ...r,
+        turnover: Number(r.turnover),
+        prize_amount: Number(r.prize_amount),
+      })) as EntryRow[];
+    },
+  });
+
+  const inputRows = useMemo(
+    () => allRows.filter((r) => r.status === "input" && r.period_month === periodMonth && r.period_year === periodYear),
+    [allRows, periodMonth, periodYear],
+  );
+  const claimRows = useMemo(
+    () => allRows.filter((r) => r.status === "claimed" && r.period_month === periodMonth && r.period_year === periodYear),
+    [allRows, periodMonth, periodYear],
+  );
+
+  const addMut = useMutation({
+    mutationFn: async (parsed: ParsedRow[]) => {
+      const { data: sess } = await supabase.auth.getUser();
+      const payload = parsed.map((p) => ({
+        ...p,
+        status: "input",
+        period_month: periodMonth,
+        period_year: periodYear,
+        created_by: sess.user?.id ?? null,
+      }));
+      const { error } = await supabase.from("gebyar_turnover_entries").insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: (_d, parsed) => {
+      qc.invalidateQueries({ queryKey: QK });
+      toast.success(`${parsed.length} data turnover ditambahkan`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const claimMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("gebyar_turnover_entries")
+        .update({ status: "claimed", claimed_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const delMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("gebyar_turnover_entries").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK }),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const handleAdd = () => {
     const parsed = parseGebyarPaste(paste);
@@ -173,57 +178,39 @@ function GebyarTurnoverPage() {
       });
       return;
     }
-    setState((s) => ({ ...s, input: [...s.input, ...parsed] }));
+    addMut.mutate(parsed);
     setPaste("");
     setPasteOpen(false);
-    toast.success(`${parsed.length} data turnover ditambahkan`);
   };
 
-  const handleClaim = (id: string) => {
-    setState((s) => {
-      const row = s.input.find((r) => r.id === id);
-      if (!row) return s;
-      return {
-        ...s,
-        input: s.input.filter((r) => r.id !== id),
-        claims: [
-          { ...row, claimed_at: new Date().toISOString(), period_month: s.period_month, period_year: s.period_year },
-          ...s.claims,
-        ],
-      };
-    });
+  const state = { period_month: periodMonth, period_year: periodYear, input: inputRows, claims: claimRows };
+  const setState = (updater: (s: typeof state) => Partial<typeof state>) => {
+    const patch = updater(state);
+    if (patch.period_month !== undefined) setPeriodMonth(patch.period_month);
+    if (patch.period_year !== undefined) setPeriodYear(patch.period_year);
   };
 
-  const handleDeleteInput = (id: string) => setState((s) => ({ ...s, input: s.input.filter((r) => r.id !== id) }));
-
-  const handleDeleteClaim = (id: string) => setState((s) => ({ ...s, claims: s.claims.filter((r) => r.id !== id) }));
+  const handleClaim = (id: string) => claimMut.mutate(id);
+  const handleDeleteInput = (id: string) => delMut.mutate(id);
+  const handleDeleteClaim = (id: string) => delMut.mutate(id);
 
   const inputTotals = useMemo(
-    () => ({
-      members: state.input.length,
-      bonus: state.input.reduce((n, r) => n + r.prize_amount, 0),
-    }),
-    [state.input],
+    () => ({ members: inputRows.length, bonus: inputRows.reduce((n, r) => n + r.prize_amount, 0) }),
+    [inputRows],
   );
 
-  const filteredClaims = useMemo(
-    () => state.claims.filter((r) => r.period_month === state.period_month && r.period_year === state.period_year),
-    [state.claims, state.period_month, state.period_year],
-  );
+  const filteredClaims = claimRows;
 
   const claimTotals = useMemo(
-    () => ({
-      members: filteredClaims.length,
-      bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0),
-    }),
+    () => ({ members: filteredClaims.length, bonus: filteredClaims.reduce((n, r) => n + r.prize_amount, 0) }),
     [filteredClaims],
   );
 
-  const inputPageCount = Math.max(1, Math.ceil(state.input.length / PAGE_SIZE));
+  const inputPageCount = Math.max(1, Math.ceil(inputRows.length / PAGE_SIZE));
   const claimPageCount = Math.max(1, Math.ceil(filteredClaims.length / PAGE_SIZE));
   const inputPageSafe = Math.min(inputPage, inputPageCount);
   const claimPageSafe = Math.min(claimPage, claimPageCount);
-  const inputPageRows = state.input.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
+  const inputPageRows = inputRows.slice((inputPageSafe - 1) * PAGE_SIZE, inputPageSafe * PAGE_SIZE);
   const claimPageRows = filteredClaims.slice((claimPageSafe - 1) * PAGE_SIZE, claimPageSafe * PAGE_SIZE);
 
   useEffect(() => {
