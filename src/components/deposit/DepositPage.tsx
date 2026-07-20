@@ -510,7 +510,13 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
     }
   };
 
+  const confirmDelete = useConfirmDelete();
   const onDelete = async (id: string) => {
+    const ok = await confirmDelete({
+      title: "Hapus transaksi ini?",
+      description: "Data transaksi akan dihapus permanen. Tekan Enter untuk konfirmasi.",
+    });
+    if (!ok) return;
     try {
       await deleteMut.mutateAsync(id);
       toast.success("Transaksi dihapus");
