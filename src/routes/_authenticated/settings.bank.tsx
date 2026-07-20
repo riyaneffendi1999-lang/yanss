@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/settings/bank")({
