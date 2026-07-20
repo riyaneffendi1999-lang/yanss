@@ -178,7 +178,7 @@ function AuthPage() {
         {/* Logo */}
         <div className="mb-6 flex justify-center">
           <img
-            src={logoAsset.url}
+            src={logoUrl}
             alt="MaxSlot88"
             className="h-auto w-[280px] select-none"
             style={{ filter: "drop-shadow(0 0 24px rgba(229,9,20,0.35))" }}
