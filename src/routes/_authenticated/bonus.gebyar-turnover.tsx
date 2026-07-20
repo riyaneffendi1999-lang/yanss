@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { useConfirmDelete } from "@/components/common/ConfirmDelete";
 
 export const Route = createFileRoute("/_authenticated/bonus/gebyar-turnover")({
   head: () => ({ meta: [{ title: "Gebyar Turnover — Admin Console" }] }),
