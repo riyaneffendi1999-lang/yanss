@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { UserCircle } from "lucide-react";
 
 import { PageHeader } from "@/components/dashboard/PageHeader";
+import { RefreshButton } from "@/components/common/RefreshButton";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 
