@@ -87,28 +87,24 @@ async function requireAdminSession() {
     throw new Error("Unauthorized: token login tidak ditemukan");
   }
 
-  const { createClient } = await import("@supabase/supabase-js");
   const { url, publishableKey } = readSupabaseConfig();
-  const supabase = createClient(url, publishableKey, {
-    global: {
-      fetch: createSupabaseFetch(publishableKey),
-      headers: { Authorization: `Bearer ${token}` },
-    },
-    auth: {
-      storage: undefined,
-      persistSession: false,
-      autoRefreshToken: false,
+  const authResponse = await fetch(`${url.replace(/\/$/, "")}/auth/v1/user`, {
+    headers: {
+      apikey: publishableKey,
+      Authorization: `Bearer ${token}`,
     },
   });
 
-  // Use Supabase Auth server validation instead of local JWT claims parsing,
-  // so both legacy and newer signing tokens work on custom domains.
-  const { data, error } = await supabase.auth.getUser(token);
-  if (error || !data.user?.id) {
+  if (!authResponse.ok) {
     throw new Error("Unauthorized: sesi login tidak valid, silakan login ulang");
   }
 
-  return { supabase, userId: data.user.id };
+  const user = (await authResponse.json()) as { id?: string };
+  if (!user.id) {
+    throw new Error("Unauthorized: sesi login tidak valid, silakan login ulang");
+  }
+
+  return { userId: user.id };
 }
 
 function usernameToEmail(username: string) {
