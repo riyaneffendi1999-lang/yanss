@@ -102,8 +102,8 @@ function KamisCeriaPage() {
     });
   }, [rows, search, effFrom, effTo]);
 
-  const totalMember = new Set(rows.map((r) => r.username)).size;
-  const totalBonus = rows.reduce((s, r) => s + Number(r.bonus), 0);
+  const totalMember = new Set(filtered.map((r) => r.username)).size;
+  const totalBonus = filtered.reduce((s, r) => s + Number(r.bonus), 0);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);

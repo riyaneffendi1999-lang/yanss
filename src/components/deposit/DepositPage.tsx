@@ -398,25 +398,43 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
   const OUTFLOW_STATUS: DepositStatus = config.kind === "pulsa" ? "Cuci Pulsa" : "Pindah dana";
 
   const totals = useMemo(() => {
-    const scoped = accountId ? rows.filter((r) => !r.account_id || r.account_id === accountId) : rows;
-    const total = scoped.length;
-    const approved = scoped.filter((r) => r.status === "Approved").length;
-    const pending = scoped.filter((r) => r.status === "Pending").length;
-    const totalAmount = scoped.reduce((s, r) => s + Number(r.amount), 0);
-    const unik = scoped.filter((r) => r.status === "Unik").length;
+    // Full scope (all time) — Saldo Akhir must not depend on filter tanggal
+    const allScoped = accountId ? rows.filter((r) => !r.account_id || r.account_id === accountId) : rows;
+    const sumAll = (st: DepositStatus) =>
+      allScoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
+    const opening = Number(account?.opening_balance ?? 0);
+    const computedBalance =
+      opening + sumAll("Approved") + sumAll("Unik") + sumAll("Pending") - sumAll(OUTFLOW_STATUS) - sumAll("Biaya admin");
+
+    // Date-scoped rows for the stat tiles
+    const scoped = allScoped.filter((r) => {
+      if (effFrom && r.iso_date < effFrom) return false;
+      if (effTo && r.iso_date > effTo) return false;
+      return true;
+    });
     const sumBy = (st: DepositStatus) =>
       scoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
-    const sumApproved = sumBy("Approved");
-    const sumPending = sumBy("Pending");
-    const sumUnik = sumBy("Unik");
-    const sumOut = sumBy(OUTFLOW_STATUS);
-    const sumFee = sumBy("Biaya admin");
-    const opening = Number(account?.opening_balance ?? 0);
-    const computedBalance = opening + sumApproved + sumUnik + sumPending - sumOut - sumFee;
-    const outCount = scoped.filter((r) => r.status === OUTFLOW_STATUS).length;
-    const feeCount = scoped.filter((r) => r.status === "Biaya admin").length;
-    return { total, approved, pending, totalAmount, unik, computedBalance, opening, outCount, feeCount };
-  }, [rows, accountId, account, OUTFLOW_STATUS]);
+    const countBy = (st: DepositStatus) => scoped.filter((r) => r.status === st).length;
+
+    const approvedCount = countBy("Approved");
+    const approvedAmount = sumBy("Approved");
+    return {
+      total: approvedCount,
+      approved: approvedCount,
+      approvedAmount,
+      pending: countBy("Pending"),
+      pendingAmount: sumBy("Pending"),
+      totalAmount: approvedAmount,
+      unik: countBy("Unik"),
+      unikAmount: sumBy("Unik"),
+      computedBalance,
+      opening,
+      outCount: countBy(OUTFLOW_STATUS),
+      outAmount: sumBy(OUTFLOW_STATUS),
+      feeCount: countBy("Biaya admin"),
+      feeAmount: sumBy("Biaya admin"),
+    };
+  }, [rows, accountId, account, OUTFLOW_STATUS, effFrom, effTo]);
 
   // Pagination — 20 rows per page
   const PAGE_SIZE = 20;
@@ -677,19 +695,37 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           index={0}
           tone="blue"
           label="Total Transaksi"
-          value={String(totals.total)}
-          hint={`${totals.approved} approved`}
+          value={rp(totals.approvedAmount)}
+          hint={`${totals.approved} trx`}
         />
-        <StatTile index={1} tone="amber" label="Total Pending" value={String(totals.pending)} hint="Perlu diproses" />
+        <StatTile
+          index={1}
+          tone="amber"
+          label="Total Pending"
+          value={rp(totals.pendingAmount)}
+          hint={`${totals.pending} trx`}
+        />
         <StatTile
           index={2}
           tone="teal"
           label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"}
-          value={String(totals.outCount)}
-          hint="trx"
+          value={rp(totals.outAmount)}
+          hint={`${totals.outCount} trx`}
         />
-        <StatTile index={3} tone="violet" label="Total Unik" value={String(totals.unik)} hint="trx" />
-        <StatTile index={4} tone="indigo" label="Total Biaya Admin" value={String(totals.feeCount)} hint="trx" />
+        <StatTile
+          index={3}
+          tone="violet"
+          label="Total Unik"
+          value={rp(totals.unikAmount)}
+          hint={`${totals.unik} trx`}
+        />
+        <StatTile
+          index={4}
+          tone="indigo"
+          label="Total Biaya Admin"
+          value={rp(totals.feeAmount)}
+          hint={`${totals.feeCount} trx`}
+        />
       </div>
 
       {/* Toolbar + Table */}

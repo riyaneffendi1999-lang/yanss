@@ -218,8 +218,8 @@ function LuckySpinPage() {
   const pagedInput = inputRows.slice((currentInputPage - 1) * INPUT_PAGE_SIZE, currentInputPage * INPUT_PAGE_SIZE);
 
   const filledCount = inputRows.filter((r) => r.username).length;
-  const totalMember = new Set(completeRows.map((r) => r.username)).size;
-  const totalBonus = completeRows.reduce((s, r) => s + r.bonus, 0);
+  const totalMember = new Set(filteredComplete.map((r) => r.username)).size;
+  const totalBonus = filteredComplete.reduce((s, r) => s + r.bonus, 0);
 
   return (
     <div className="space-y-6">
