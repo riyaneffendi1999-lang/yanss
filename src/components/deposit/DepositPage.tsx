@@ -404,7 +404,12 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       allScoped.filter((r) => r.status === st).reduce((s, r) => s + Number(r.amount), 0);
     const opening = Number(account?.opening_balance ?? 0);
     const computedBalance =
-      opening + sumAll("Approved") + sumAll("Unik") + sumAll("Pending") - sumAll(OUTFLOW_STATUS) - sumAll("Biaya admin");
+      opening +
+      sumAll("Approved") +
+      sumAll("Unik") +
+      sumAll("Pending") -
+      sumAll(OUTFLOW_STATUS) -
+      sumAll("Biaya admin");
 
     // Date-scoped rows for the stat tiles
     const scoped = allScoped.filter((r) => {
@@ -508,8 +513,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
       sumBy("Biaya admin")
     );
   }, [rows, formAccount, OUTFLOW_STATUS]);
-  const formDelta =
-    form.status === OUTFLOW_STATUS || form.status === "Biaya admin" ? -formAmountNum : formAmountNum;
+  const formDelta = form.status === OUTFLOW_STATUS || form.status === "Biaya admin" ? -formAmountNum : formAmountNum;
   const saldoSetelah = formAccountBalance + formDelta;
 
   const onAddSubmit = async () => {
@@ -694,7 +698,7 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
         <StatTile
           index={0}
           tone="blue"
-          label="Total Transaksi"
+          label="Total Approved"
           value={rp(totals.approvedAmount)}
           hint={`${totals.approved} trx`}
         />
