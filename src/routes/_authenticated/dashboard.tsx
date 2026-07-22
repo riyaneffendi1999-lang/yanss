@@ -543,11 +543,6 @@ function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-medium">{m.username}</p>
-                    <p className="truncate text-[11px] text-muted-foreground">{m.full_name}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs font-semibold">{fmt(m.total)}</p>
-                    <p className="text-[10px] text-muted-foreground">{m.count} trx</p>
                   </div>
                 </li>
               ))}
