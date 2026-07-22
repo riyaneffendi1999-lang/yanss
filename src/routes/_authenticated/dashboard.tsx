@@ -269,14 +269,13 @@ function DashboardPage() {
 
 
   const topMembers = useMemo(() => {
-    const map = new Map<string, { username: string; full_name: string; total: number; count: number }>();
+    const map = new Map<string, { username: string; total: number }>();
     inRange.forEach((r) => {
-      const cur = map.get(r.username) ?? { username: r.username, full_name: r.full_name, total: 0, count: 0 };
+      const cur = map.get(r.username) ?? { username: r.username, total: 0 };
       cur.total += Number(r.amount || 0);
-      cur.count += 1;
       map.set(r.username, cur);
     });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 5);
+    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
   }, [inRange]);
 
   const bankStatus = banks.slice(0, 6);
