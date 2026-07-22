@@ -544,6 +544,10 @@ function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="truncate text-sm font-medium">{m.username}</p>
                   </div>
+                  <div className="text-right">
+                    <p className="text-xs font-semibold">{fmt(m.total)}</p>
+                    <p className="text-[10px] text-muted-foreground">deposit terbanyak</p>
+                  </div>
                 </li>
               ))}
             </ul>
