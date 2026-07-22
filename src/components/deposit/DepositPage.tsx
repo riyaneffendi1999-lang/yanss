@@ -695,19 +695,37 @@ export function DepositPage({ config }: { config: DepositPageConfig }) {
           index={0}
           tone="blue"
           label="Total Transaksi"
-          value={String(totals.total)}
-          hint={`${totals.approved} approved`}
+          value={rp(totals.approvedAmount)}
+          hint={`${totals.approved} trx`}
         />
-        <StatTile index={1} tone="amber" label="Total Pending" value={String(totals.pending)} hint="Perlu diproses" />
+        <StatTile
+          index={1}
+          tone="amber"
+          label="Total Pending"
+          value={rp(totals.pendingAmount)}
+          hint={`${totals.pending} trx`}
+        />
         <StatTile
           index={2}
           tone="teal"
           label={config.kind === "pulsa" ? "Total Cuci Pulsa" : "Total Pindah Dana"}
-          value={String(totals.outCount)}
-          hint="trx"
+          value={rp(totals.outAmount)}
+          hint={`${totals.outCount} trx`}
         />
-        <StatTile index={3} tone="violet" label="Total Unik" value={String(totals.unik)} hint="trx" />
-        <StatTile index={4} tone="indigo" label="Total Biaya Admin" value={String(totals.feeCount)} hint="trx" />
+        <StatTile
+          index={3}
+          tone="violet"
+          label="Total Unik"
+          value={rp(totals.unikAmount)}
+          hint={`${totals.unik} trx`}
+        />
+        <StatTile
+          index={4}
+          tone="indigo"
+          label="Total Biaya Admin"
+          value={rp(totals.feeAmount)}
+          hint={`${totals.feeCount} trx`}
+        />
       </div>
 
       {/* Toolbar + Table */}
