@@ -171,7 +171,7 @@ function useBonusTotals(effFrom: string, effTo: string) {
 function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const { from: effFrom, to: effTo } = useMemo(() => resolveDateRange(dateRange), [dateRange]);
-  const bonusTotals = useBonusTotals();
+  const bonusTotals = useBonusTotals(effFrom, effTo);
 
   const { data: deposits = [] } = useQuery<DepositRow[]>({
     queryKey: ["dashboard-deposits"],
