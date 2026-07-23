@@ -612,31 +612,31 @@ function DashboardPage() {
               <h3 className="text-sm font-semibold">Rekap Program Bonus</h3>
               <p className="text-xs text-muted-foreground">Total klaim & inject bonus seluruh program</p>
             </div>
-            <Gift className="h-4 w-4 text-amber-300" />
+            <Gift className="h-4 w-4 text-amber-600 dark:text-amber-300" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-gradient-to-br from-sky-500/15 to-sky-500/0 p-4 ring-1 ring-sky-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-300">Total Klaim</div>
-              <div className="mt-1 text-2xl font-semibold">{bonusTotals.count}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">Total Klaim</div>
+              <div className="mt-1 text-xl font-semibold text-foreground">{bonusTotals.count}</div>
             </div>
             <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/0 p-4 ring-1 ring-emerald-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Total Inject Bonus</div>
-              <div className="mt-1 text-2xl font-semibold">{fmt(bonusTotals.total)}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Total Inject Bonus</div>
+              <div className="mt-1 text-xl font-semibold text-foreground">{fmt(bonusTotals.total)}</div>
             </div>
           </div>
           <ul className="mt-4 space-y-2">
             {bonusTotals.perProgram.map((p) => (
               <li key={p.name} className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-300">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300">
                     <Gift className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.member} member</p>
+                    <p className="text-[11px] text-muted-foreground">{p.member} member · {p.count} klaim</p>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-emerald-300">{fmt(p.bonus)}</div>
+                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{fmt(p.bonus)}</div>
               </li>
             ))}
           </ul>
