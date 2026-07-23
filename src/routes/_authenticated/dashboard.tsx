@@ -549,7 +549,7 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="glass-panel soft-shadow rounded-xl p-5">
+        <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Top Members</h3>
             <Users className="h-4 w-4 text-muted-foreground" />
