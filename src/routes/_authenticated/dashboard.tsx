@@ -518,14 +518,14 @@ function DashboardPage() {
 
       {/* Channel + Top Members */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="glass-panel soft-shadow rounded-xl p-4">
+          <div className="mb-3 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Total per Channel</h3>
-              <p className="text-xs text-muted-foreground">Periode terpilih</p>
+              <p className="text-[11px] text-muted-foreground">Periode terpilih</p>
             </div>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-44 w-full">
             {channelStats.length === 0 ? (
               <div className="grid h-full place-items-center text-xs text-muted-foreground">Belum ada data</div>
             ) : (
