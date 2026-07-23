@@ -276,10 +276,10 @@ function KamisCeriaPage() {
 function StatCard({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: string }) {
   return (
     <div className={cn("rounded-xl bg-gradient-to-br p-4 ring-1", tone)}>
-      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider opacity-80">
+      <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-foreground/70">
         {icon} {label}
       </div>
-      <div className="mt-1 text-2xl font-semibold text-foreground">{value}</div>
+      <div className="mt-1 text-xl font-semibold text-foreground">{value}</div>
     </div>
   );
 }

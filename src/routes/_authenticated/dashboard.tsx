@@ -86,10 +86,10 @@ const EMONEY_CHANNELS = ["DANA", "OVO", "GOPAY", "LINKAJA"];
 const PULSA_CHANNELS = ["TELKOMSEL", "XL"];
 
 const GROUP_META = [
-  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30 text-sky-300",           channels: BANK_CHANNELS },
-  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30 text-violet-300", channels: EMONEY_CHANNELS },
-  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30 text-emerald-300", channels: PULSA_CHANNELS },
-  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30 text-amber-300",   channels: [] as string[] },
+  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30",           accent: "text-sky-700 dark:text-sky-300",         channels: BANK_CHANNELS },
+  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30", accent: "text-violet-700 dark:text-violet-300",   channels: EMONEY_CHANNELS },
+  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30", accent: "text-emerald-700 dark:text-emerald-300", channels: PULSA_CHANNELS },
+  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30",   accent: "text-amber-700 dark:text-amber-300",     channels: [] as string[] },
 ];
 
 function fmt(n: number) {
@@ -101,53 +101,77 @@ function statusBadge(s: string) {
   return <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">{s}</Badge>;
 }
 
-// Read locally-persisted bonus totals (Lucky Spin, etc.)
-function useBonusTotals() {
-  const [state, setState] = useState({ total: 0, count: 0, perProgram: [] as { name: string; member: number; bonus: number }[] });
-  useEffect(() => {
-    const compute = () => {
-      const programs: { key: string; name: string }[] = [
-        { key: "lucky-spin/complete-rows", name: "Lucky Spin" },
-        { key: "kamis-ceria:complete", name: "Kamis Ceria" },
-        { key: "gebyar-turnover:complete", name: "Gebyar Turnover" },
-      ];
-      let total = 0;
-      let count = 0;
-      const perProgram: { name: string; member: number; bonus: number }[] = [];
-      for (const p of programs) {
-        let pTotal = 0;
-        const members = new Set<string>();
-        try {
-          const raw = localStorage.getItem(p.key);
-          if (raw) {
-            const arr = JSON.parse(raw);
-            if (Array.isArray(arr)) {
-              for (const r of arr) {
-                const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
-                if (!Number.isNaN(v)) { pTotal += v; total += v; }
-                count += 1;
-                if (r?.username) members.add(String(r.username));
-              }
-            }
-          }
-        } catch { /* ignore */ }
-        perProgram.push({ name: p.name, bonus: pTotal, member: members.size });
-      }
-      setState({ total, count, perProgram });
+// Bonus totals sourced from Supabase, filtered by the dashboard date range.
+function useBonusTotals(effFrom: string, effTo: string) {
+  const monthFrom = effFrom ? Number(effFrom.slice(5, 7)) : 0;
+  const yearFrom = effFrom ? Number(effFrom.slice(0, 4)) : 0;
+
+  const { data: lucky = [] } = useQuery({
+    queryKey: ["dashboard-bonus-lucky"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lucky_spin_entries")
+        .select("username,bonus,processed_at,iso_date,status")
+        .eq("status", "complete");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: kamis = [] } = useQuery({
+    queryKey: ["dashboard-bonus-kamis"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kamis_ceria_claims")
+        .select("username,bonus,iso_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: gebyar = [] } = useQuery({
+    queryKey: ["dashboard-bonus-gebyar"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gebyar_turnover_entries")
+        .select("username,prize_amount,period_year,period_month,status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return useMemo(() => {
+    const inRange = (iso?: string | null) => {
+      if (!iso) return !effFrom && !effTo;
+      const d = iso.slice(0, 10);
+      if (effFrom && d < effFrom) return false;
+      if (effTo && d > effTo) return false;
+      return true;
     };
-    compute();
-    const onStorage = () => compute();
-    window.addEventListener("storage", onStorage);
-    const t = setInterval(compute, 4000);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(t); };
-  }, []);
-  return state;
+    const luckyF = lucky.filter((r) => inRange(r.processed_at ?? r.iso_date));
+    const kamisF = kamis.filter((r) => inRange(r.iso_date));
+    const gebyarF = gebyar.filter((r) => {
+      if (!effFrom) return true;
+      // Include if period overlaps the filter's starting month.
+      return r.period_year === yearFrom && r.period_month === monthFrom;
+    });
+
+    const sum = (arr: { bonus?: number; prize_amount?: number }[], key: "bonus" | "prize_amount") =>
+      arr.reduce((s, r) => s + Number(r[key] ?? 0), 0);
+
+    const perProgram = [
+      { name: "Lucky Spin", bonus: sum(luckyF, "bonus"), member: new Set(luckyF.map((r) => r.username)).size, count: luckyF.length },
+      { name: "Kamis Ceria", bonus: sum(kamisF, "bonus"), member: new Set(kamisF.map((r) => r.username)).size, count: kamisF.length },
+      { name: "Gebyar Turnover", bonus: sum(gebyarF, "prize_amount"), member: new Set(gebyarF.map((r) => r.username)).size, count: gebyarF.length },
+    ];
+    const total = perProgram.reduce((s, p) => s + p.bonus, 0);
+    const count = perProgram.reduce((s, p) => s + p.count, 0);
+    return { total, count, perProgram };
+  }, [lucky, kamis, gebyar, effFrom, effTo, monthFrom, yearFrom]);
 }
 
 function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRangeValue>({ preset: "today", from: "", to: "" });
   const { from: effFrom, to: effTo } = useMemo(() => resolveDateRange(dateRange), [dateRange]);
-  const bonusTotals = useBonusTotals();
+  const bonusTotals = useBonusTotals(effFrom, effTo);
 
   const { data: deposits = [] } = useQuery<DepositRow[]>({
     queryKey: ["dashboard-deposits"],
@@ -317,12 +341,12 @@ function DashboardPage() {
               )}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+                <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-wider", g.accent)}>
                   <g.icon className="h-4 w-4" /> {g.label}
                 </div>
-                <ArrowUpRight className="h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
+                <ArrowUpRight className={cn("h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80", g.accent)} />
               </div>
-              <div className="mt-3 text-2xl font-semibold text-foreground">{fmt(t.total)}</div>
+              <div className="mt-3 text-xl font-semibold text-foreground">{fmt(t.total)}</div>
               <div className="text-[11px] text-muted-foreground">
                 {t.count} {g.key === "bonus" ? "klaim bonus" : "transaksi"}
                 {g.channels.length > 0 && <span className="ml-1">· {g.channels.join(" · ")}</span>}
@@ -494,14 +518,14 @@ function DashboardPage() {
 
       {/* Channel + Top Members */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
-          <div className="mb-4 flex items-center justify-between">
+        <div className="glass-panel soft-shadow rounded-xl p-4">
+          <div className="mb-3 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold">Total per Channel</h3>
-              <p className="text-xs text-muted-foreground">Periode terpilih</p>
+              <p className="text-[11px] text-muted-foreground">Periode terpilih</p>
             </div>
           </div>
-          <div className="h-64 w-full">
+          <div className="h-44 w-full">
             {channelStats.length === 0 ? (
               <div className="grid h-full place-items-center text-xs text-muted-foreground">Belum ada data</div>
             ) : (
@@ -525,7 +549,7 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="glass-panel soft-shadow rounded-xl p-5">
+        <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-sm font-semibold">Top Members</h3>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -588,31 +612,31 @@ function DashboardPage() {
               <h3 className="text-sm font-semibold">Rekap Program Bonus</h3>
               <p className="text-xs text-muted-foreground">Total klaim & inject bonus seluruh program</p>
             </div>
-            <Gift className="h-4 w-4 text-amber-300" />
+            <Gift className="h-4 w-4 text-amber-600 dark:text-amber-300" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-gradient-to-br from-sky-500/15 to-sky-500/0 p-4 ring-1 ring-sky-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-300">Total Klaim</div>
-              <div className="mt-1 text-2xl font-semibold">{bonusTotals.count}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">Total Klaim</div>
+              <div className="mt-1 text-xl font-semibold text-foreground">{bonusTotals.count}</div>
             </div>
             <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/0 p-4 ring-1 ring-emerald-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Total Inject Bonus</div>
-              <div className="mt-1 text-2xl font-semibold">{fmt(bonusTotals.total)}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Total Inject Bonus</div>
+              <div className="mt-1 text-xl font-semibold text-foreground">{fmt(bonusTotals.total)}</div>
             </div>
           </div>
           <ul className="mt-4 space-y-2">
             {bonusTotals.perProgram.map((p) => (
               <li key={p.name} className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
                 <div className="flex items-center gap-2">
-                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-300">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300">
                     <Gift className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.member} member</p>
+                    <p className="text-[11px] text-muted-foreground">{p.member} member · {p.count} klaim</p>
                   </div>
                 </div>
-                <div className="text-sm font-semibold text-emerald-300">{fmt(p.bonus)}</div>
+                <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{fmt(p.bonus)}</div>
               </li>
             ))}
           </ul>

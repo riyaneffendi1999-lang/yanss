@@ -83,7 +83,18 @@ function LuckySpinPage() {
         .reverse(),
     [rows],
   );
-  const completeRows = useMemo(() => rows.filter((r) => r.status === "complete"), [rows]);
+  const completeRows = useMemo(
+    () =>
+      rows
+        .filter((r) => r.status === "complete")
+        .slice()
+        .sort((a, b) => {
+          const ta = new Date(a.processed_at ?? a.created_at).getTime();
+          const tb = new Date(b.processed_at ?? b.created_at).getTime();
+          return tb - ta;
+        }),
+    [rows],
+  );
 
   const insertMut = useMutation({
     mutationFn: async (payload: { username?: string; ticket: string; bonus?: number }[]) => {
@@ -481,9 +492,9 @@ function StatusPill({ status }: { status: "pending" | "complete" | "idle" }) {
 function StatCard({ label, value, suffix, accent }: { label: string; value: string; suffix?: string; accent: string }) {
   return (
     <div className={cn("rounded-xl bg-gradient-to-br p-4 ring-1", accent)}>
-      <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-foreground/70">{label}</div>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold text-foreground">{value}</span>
+        <span className="text-xl font-semibold text-foreground">{value}</span>
         {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
       </div>
     </div>
