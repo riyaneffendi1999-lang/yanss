@@ -341,12 +341,12 @@ function DashboardPage() {
               )}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider">
+                <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-wider", g.accent)}>
                   <g.icon className="h-4 w-4" /> {g.label}
                 </div>
-                <ArrowUpRight className="h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80" />
+                <ArrowUpRight className={cn("h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80", g.accent)} />
               </div>
-              <div className="mt-3 text-2xl font-semibold text-foreground">{fmt(t.total)}</div>
+              <div className="mt-3 text-xl font-semibold text-foreground">{fmt(t.total)}</div>
               <div className="text-[11px] text-muted-foreground">
                 {t.count} {g.key === "bonus" ? "klaim bonus" : "transaksi"}
                 {g.channels.length > 0 && <span className="ml-1">· {g.channels.join(" · ")}</span>}
