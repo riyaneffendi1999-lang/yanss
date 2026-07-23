@@ -101,47 +101,71 @@ function statusBadge(s: string) {
   return <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">{s}</Badge>;
 }
 
-// Read locally-persisted bonus totals (Lucky Spin, etc.)
-function useBonusTotals() {
-  const [state, setState] = useState({ total: 0, count: 0, perProgram: [] as { name: string; member: number; bonus: number }[] });
-  useEffect(() => {
-    const compute = () => {
-      const programs: { key: string; name: string }[] = [
-        { key: "lucky-spin/complete-rows", name: "Lucky Spin" },
-        { key: "kamis-ceria:complete", name: "Kamis Ceria" },
-        { key: "gebyar-turnover:complete", name: "Gebyar Turnover" },
-      ];
-      let total = 0;
-      let count = 0;
-      const perProgram: { name: string; member: number; bonus: number }[] = [];
-      for (const p of programs) {
-        let pTotal = 0;
-        const members = new Set<string>();
-        try {
-          const raw = localStorage.getItem(p.key);
-          if (raw) {
-            const arr = JSON.parse(raw);
-            if (Array.isArray(arr)) {
-              for (const r of arr) {
-                const v = Number(r?.bonus ?? r?.amount ?? r?.inject ?? 0);
-                if (!Number.isNaN(v)) { pTotal += v; total += v; }
-                count += 1;
-                if (r?.username) members.add(String(r.username));
-              }
-            }
-          }
-        } catch { /* ignore */ }
-        perProgram.push({ name: p.name, bonus: pTotal, member: members.size });
-      }
-      setState({ total, count, perProgram });
+// Bonus totals sourced from Supabase, filtered by the dashboard date range.
+function useBonusTotals(effFrom: string, effTo: string) {
+  const monthFrom = effFrom ? Number(effFrom.slice(5, 7)) : 0;
+  const yearFrom = effFrom ? Number(effFrom.slice(0, 4)) : 0;
+
+  const { data: lucky = [] } = useQuery({
+    queryKey: ["dashboard-bonus-lucky"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lucky_spin_entries")
+        .select("username,bonus,processed_at,iso_date,status")
+        .eq("status", "complete");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: kamis = [] } = useQuery({
+    queryKey: ["dashboard-bonus-kamis"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("kamis_ceria_claims")
+        .select("username,bonus,iso_date");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const { data: gebyar = [] } = useQuery({
+    queryKey: ["dashboard-bonus-gebyar"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gebyar_turnover_entries")
+        .select("username,prize_amount,period_year,period_month,status");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  return useMemo(() => {
+    const inRange = (iso?: string | null) => {
+      if (!iso) return !effFrom && !effTo;
+      const d = iso.slice(0, 10);
+      if (effFrom && d < effFrom) return false;
+      if (effTo && d > effTo) return false;
+      return true;
     };
-    compute();
-    const onStorage = () => compute();
-    window.addEventListener("storage", onStorage);
-    const t = setInterval(compute, 4000);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(t); };
-  }, []);
-  return state;
+    const luckyF = lucky.filter((r) => inRange(r.processed_at ?? r.iso_date));
+    const kamisF = kamis.filter((r) => inRange(r.iso_date));
+    const gebyarF = gebyar.filter((r) => {
+      if (!effFrom) return true;
+      // Include if period overlaps the filter's starting month.
+      return r.period_year === yearFrom && r.period_month === monthFrom;
+    });
+
+    const sum = (arr: { bonus?: number; prize_amount?: number }[], key: "bonus" | "prize_amount") =>
+      arr.reduce((s, r) => s + Number(r[key] ?? 0), 0);
+
+    const perProgram = [
+      { name: "Lucky Spin", bonus: sum(luckyF, "bonus"), member: new Set(luckyF.map((r) => r.username)).size, count: luckyF.length },
+      { name: "Kamis Ceria", bonus: sum(kamisF, "bonus"), member: new Set(kamisF.map((r) => r.username)).size, count: kamisF.length },
+      { name: "Gebyar Turnover", bonus: sum(gebyarF, "prize_amount"), member: new Set(gebyarF.map((r) => r.username)).size, count: gebyarF.length },
+    ];
+    const total = perProgram.reduce((s, p) => s + p.bonus, 0);
+    const count = perProgram.reduce((s, p) => s + p.count, 0);
+    return { total, count, perProgram };
+  }, [lucky, kamis, gebyar, effFrom, effTo, monthFrom, yearFrom]);
 }
 
 function DashboardPage() {
