@@ -86,10 +86,10 @@ const EMONEY_CHANNELS = ["DANA", "OVO", "GOPAY", "LINKAJA"];
 const PULSA_CHANNELS = ["TELKOMSEL", "XL"];
 
 const GROUP_META = [
-  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30 text-sky-300",           channels: BANK_CHANNELS },
-  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30 text-violet-300", channels: EMONEY_CHANNELS },
-  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30 text-emerald-300", channels: PULSA_CHANNELS },
-  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30 text-amber-300",   channels: [] as string[] },
+  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30",           accent: "text-sky-700 dark:text-sky-300",         channels: BANK_CHANNELS },
+  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30", accent: "text-violet-700 dark:text-violet-300",   channels: EMONEY_CHANNELS },
+  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30", accent: "text-emerald-700 dark:text-emerald-300", channels: PULSA_CHANNELS },
+  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30",   accent: "text-amber-700 dark:text-amber-300",     channels: [] as string[] },
 ];
 
 function fmt(n: number) {
