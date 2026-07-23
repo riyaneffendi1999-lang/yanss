@@ -293,7 +293,7 @@ function DashboardPage() {
   }, [deposits]);
 
   // Group totals aggregated across all deposits in range (VIP/High/Low/New Reg/Reguler)
-  const MEMBER_GROUPS = ["VIP", "High", "Low", "New Registration", "Medium"] as const;
+  const MEMBER_GROUPS = ["VIP", "High", "Medium", "Low", "New Registration"] as const;
   const GROUP_COLORS: Record<string, string> = {
     VIP: "rgb(251 191 36)",
     High: "rgb(244 63 94)",
@@ -311,10 +311,10 @@ function DashboardPage() {
         : /high/i.test(raw)
           ? "High"
           : /low/i.test(raw)
-            ? "Low"
+            ? "Medium"
             : /new/i.test(raw)
-              ? "New Registration"
-              : "Medium";
+              ? "Low"
+              : "New Registration";
       map[key].total += Number(r.amount || 0);
       map[key].count += 1;
     }
