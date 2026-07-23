@@ -36,14 +36,7 @@ import { RefreshButton } from "@/components/common/RefreshButton";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DateRangeSelect, resolveDateRange, type DateRangeValue } from "@/components/common/DateRangeSelect";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -86,18 +79,52 @@ const EMONEY_CHANNELS = ["DANA", "OVO", "GOPAY", "LINKAJA"];
 const PULSA_CHANNELS = ["TELKOMSEL", "XL"];
 
 const GROUP_META = [
-  { key: "bank",   label: "Total Deposit Bank",    to: "/deposit/bank/bca",        icon: Landmark,   tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30",           accent: "text-sky-700 dark:text-sky-300",         channels: BANK_CHANNELS },
-  { key: "emoney", label: "Total Deposit E-money", to: "/deposit/emoney/dana",     icon: Wallet,     tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30", accent: "text-violet-700 dark:text-violet-300",   channels: EMONEY_CHANNELS },
-  { key: "pulsa",  label: "Total Deposit Pulsa",   to: "/deposit/pulsa/telkomsel", icon: Smartphone, tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30", accent: "text-emerald-700 dark:text-emerald-300", channels: PULSA_CHANNELS },
-  { key: "bonus",  label: "Total Bonus Adjustment", to: "/bonus/lucky-spin",       icon: Gift,       tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30",   accent: "text-amber-700 dark:text-amber-300",     channels: [] as string[] },
+  {
+    key: "bank",
+    label: "Total Deposit Bank",
+    to: "/deposit/bank/bca",
+    icon: Landmark,
+    tone: "from-sky-500/20 to-sky-500/0 ring-sky-500/30",
+    accent: "text-sky-700 dark:text-sky-300",
+    channels: BANK_CHANNELS,
+  },
+  {
+    key: "emoney",
+    label: "Total Deposit E-money",
+    to: "/deposit/emoney/dana",
+    icon: Wallet,
+    tone: "from-violet-500/20 to-violet-500/0 ring-violet-500/30",
+    accent: "text-violet-700 dark:text-violet-300",
+    channels: EMONEY_CHANNELS,
+  },
+  {
+    key: "pulsa",
+    label: "Total Deposit Pulsa",
+    to: "/deposit/pulsa/telkomsel",
+    icon: Smartphone,
+    tone: "from-emerald-500/20 to-emerald-500/0 ring-emerald-500/30",
+    accent: "text-emerald-700 dark:text-emerald-300",
+    channels: PULSA_CHANNELS,
+  },
+  {
+    key: "bonus",
+    label: "Total Bonus Adjustment",
+    to: "/bonus/lucky-spin",
+    icon: Gift,
+    tone: "from-amber-500/20 to-amber-500/0 ring-amber-500/30",
+    accent: "text-amber-700 dark:text-amber-300",
+    channels: [] as string[],
+  },
 ];
 
 function fmt(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n);
 }
 function statusBadge(s: string) {
-  if (s === "Approved" || s === "Online") return <Badge className="bg-success/15 text-success hover:bg-success/20">{s}</Badge>;
-  if (s === "Pending" || s === "Maintenance") return <Badge className="bg-warning/15 text-warning hover:bg-warning/20">{s}</Badge>;
+  if (s === "Approved" || s === "Online")
+    return <Badge className="bg-success/15 text-success hover:bg-success/20">{s}</Badge>;
+  if (s === "Pending" || s === "Maintenance")
+    return <Badge className="bg-warning/15 text-warning hover:bg-warning/20">{s}</Badge>;
   return <Badge className="bg-destructive/15 text-destructive hover:bg-destructive/20">{s}</Badge>;
 }
 
@@ -120,9 +147,7 @@ function useBonusTotals(effFrom: string, effTo: string) {
   const { data: kamis = [] } = useQuery({
     queryKey: ["dashboard-bonus-kamis"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("kamis_ceria_claims")
-        .select("username,bonus,iso_date");
+      const { data, error } = await supabase.from("kamis_ceria_claims").select("username,bonus,iso_date");
       if (error) throw error;
       return data ?? [];
     },
@@ -158,9 +183,24 @@ function useBonusTotals(effFrom: string, effTo: string) {
       arr.reduce((s, r) => s + Number(r[key] ?? 0), 0);
 
     const perProgram = [
-      { name: "Lucky Spin", bonus: sum(luckyF, "bonus"), member: new Set(luckyF.map((r) => r.username)).size, count: luckyF.length },
-      { name: "Kamis Ceria", bonus: sum(kamisF, "bonus"), member: new Set(kamisF.map((r) => r.username)).size, count: kamisF.length },
-      { name: "Gebyar Turnover", bonus: sum(gebyarF, "prize_amount"), member: new Set(gebyarF.map((r) => r.username)).size, count: gebyarF.length },
+      {
+        name: "Lucky Spin",
+        bonus: sum(luckyF, "bonus"),
+        member: new Set(luckyF.map((r) => r.username)).size,
+        count: luckyF.length,
+      },
+      {
+        name: "Kamis Ceria",
+        bonus: sum(kamisF, "bonus"),
+        member: new Set(kamisF.map((r) => r.username)).size,
+        count: kamisF.length,
+      },
+      {
+        name: "Gebyar Turnover",
+        bonus: sum(gebyarF, "prize_amount"),
+        member: new Set(gebyarF.map((r) => r.username)).size,
+        count: gebyarF.length,
+      },
     ];
     const total = perProgram.reduce((s, p) => s + p.bonus, 0);
     const count = perProgram.reduce((s, p) => s + p.count, 0);
@@ -266,12 +306,15 @@ function DashboardPage() {
     for (const g of MEMBER_GROUPS) map[g] = { total: 0, count: 0 };
     for (const r of inRange as (DepositRow & { group_tier?: string | null })[]) {
       const raw = String(r.group_tier ?? "").trim();
-      const key =
-        /vip/i.test(raw) ? "VIP" :
-        /high/i.test(raw) ? "High" :
-        /low/i.test(raw) ? "Low" :
-        /new/i.test(raw) ? "New Registration" :
-        "Medium";
+      const key = /vip/i.test(raw)
+        ? "VIP"
+        : /high/i.test(raw)
+          ? "High"
+          : /low/i.test(raw)
+            ? "Low"
+            : /new/i.test(raw)
+              ? "New Registration"
+              : "Medium";
       map[key].total += Number(r.amount || 0);
       map[key].count += 1;
     }
@@ -279,18 +322,26 @@ function DashboardPage() {
   }, [inRange]);
 
   const CHANNEL_COLORS: Record<string, string> = {
-    BCA: "rgb(56 189 248)", BNI: "rgb(251 146 60)", BRI: "rgb(59 130 246)", MANDIRI: "rgb(250 204 21)",
-    DANA: "rgb(96 165 250)", OVO: "rgb(167 139 250)", GOPAY: "rgb(52 211 153)", LINKAJA: "rgb(248 113 113)",
-    TELKOMSEL: "rgb(244 63 94)", XL: "rgb(45 212 191)",
+    BCA: "rgb(56 189 248)",
+    BNI: "rgb(251 146 60)",
+    BRI: "rgb(59 130 246)",
+    MANDIRI: "rgb(250 204 21)",
+    DANA: "rgb(96 165 250)",
+    OVO: "rgb(167 139 250)",
+    GOPAY: "rgb(52 211 153)",
+    LINKAJA: "rgb(248 113 113)",
+    TELKOMSEL: "rgb(244 63 94)",
+    XL: "rgb(45 212 191)",
   };
   const channelStats = useMemo(() => {
     const map = new Map<string, number>();
     inRange.forEach((r) => map.set(r.channel, (map.get(r.channel) ?? 0) + Number(r.amount || 0)));
     return Array.from(map.entries()).map(([channel, amount]) => ({
-      channel, amount, fill: CHANNEL_COLORS[String(channel).toUpperCase()] ?? "var(--color-primary)",
+      channel,
+      amount,
+      fill: CHANNEL_COLORS[String(channel).toUpperCase()] ?? "var(--color-primary)",
     }));
   }, [inRange]);
-
 
   const topMembers = useMemo(() => {
     const map = new Map<string, { username: string; total: number }>();
@@ -299,7 +350,9 @@ function DashboardPage() {
       cur.total += Number(r.amount || 0);
       map.set(r.username, cur);
     });
-    return Array.from(map.values()).sort((a, b) => b.total - a.total).slice(0, 10);
+    return Array.from(map.values())
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
   }, [inRange]);
 
   const bankStatus = banks.slice(0, 6);
@@ -320,10 +373,38 @@ function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Deposit"    value={fmt(totalAmount)}          delta={`${inRange.length} transaksi`} trend="up"   icon={CircleDollarSign} index={0} />
-        <StatCard label="Approved"          value={String(approvedCount)}     delta="Sukses diproses"                trend="up"   icon={TrendingUp}       index={1} />
-        <StatCard label="Pending"           value={String(pendingCount)}      delta="Perlu review"                   trend="flat" icon={Clock}            index={2} />
-        <StatCard label="Member Unik"       value={String(uniqueMembers)}     delta={`Saldo bank ${fmt(totalBalance)}`} trend="up" icon={Users}         index={3} />
+        <StatCard
+          label="Total Deposit"
+          value={fmt(totalAmount)}
+          delta={`${inRange.length} transaksi`}
+          trend="up"
+          icon={CircleDollarSign}
+          index={0}
+        />
+        <StatCard
+          label="Approved"
+          value={String(approvedCount)}
+          delta="Sukses diproses"
+          trend="up"
+          icon={TrendingUp}
+          index={1}
+        />
+        <StatCard
+          label="Pending"
+          value={String(pendingCount)}
+          delta="Perlu review"
+          trend="flat"
+          icon={Clock}
+          index={2}
+        />
+        <StatCard
+          label="Member Unik"
+          value={String(uniqueMembers)}
+          delta={`Saldo bank ${fmt(totalBalance)}`}
+          trend="up"
+          icon={Users}
+          index={3}
+        />
       </div>
 
       {/* Group totals: Bank / E-money / Pulsa / Bonus */}
@@ -344,7 +425,12 @@ function DashboardPage() {
                 <div className={cn("flex items-center gap-2 text-xs font-semibold uppercase tracking-wider", g.accent)}>
                   <g.icon className="h-4 w-4" /> {g.label}
                 </div>
-                <ArrowUpRight className={cn("h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80", g.accent)} />
+                <ArrowUpRight
+                  className={cn(
+                    "h-4 w-4 opacity-40 transition group-hover:translate-x-0.5 group-hover:opacity-80",
+                    g.accent,
+                  )}
+                />
               </div>
               <div className="mt-3 text-xl font-semibold text-foreground">{fmt(t.total)}</div>
               <div className="text-[11px] text-muted-foreground">
@@ -360,8 +446,7 @@ function DashboardPage() {
       <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
         <div className="mb-3 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold">Total per Group Member</h3>
-            <p className="text-xs text-muted-foreground">Akumulasi seluruh channel deposit · periode terpilih</p>
+            <h3 className="text-sm font-semibold">DAFTAR GROUP</h3>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -403,8 +488,6 @@ function DashboardPage() {
         </div>
       </div>
 
-
-
       {/* Charts */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="glass-panel soft-shadow rounded-xl p-5 lg:col-span-2">
@@ -417,12 +500,19 @@ function DashboardPage() {
               <ComposedChart data={trend} margin={{ top: 10, right: 16, bottom: 8, left: 0 }}>
                 <defs>
                   <linearGradient id="areaAmount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%"   stopColor="rgb(59 130 246)" stopOpacity={0.35} />
+                    <stop offset="0%" stopColor="rgb(59 130 246)" stopOpacity={0.35} />
                     <stop offset="100%" stopColor="rgb(59 130 246)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.35} vertical={false} />
-                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} tickMargin={8} />
+                <XAxis
+                  dataKey="day"
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
                 <YAxis
                   yAxisId="left"
                   stroke="rgb(59 130 246)"
@@ -439,7 +529,11 @@ function DashboardPage() {
                   tickLine={false}
                   axisLine={false}
                   width={64}
-                  tickFormatter={(v) => (Number(v) >= 1_000_000 ? `Rp ${(Number(v) / 1_000_000).toFixed(1)}jt` : `Rp ${Number(v).toLocaleString("id-ID")}`)}
+                  tickFormatter={(v) =>
+                    Number(v) >= 1_000_000
+                      ? `Rp ${(Number(v) / 1_000_000).toFixed(1)}jt`
+                      : `Rp ${Number(v).toLocaleString("id-ID")}`
+                  }
                 />
                 <Tooltip
                   cursor={{ stroke: "var(--color-border)", strokeWidth: 1 }}
@@ -451,9 +545,7 @@ function DashboardPage() {
                     boxShadow: "0 8px 24px -12px rgba(0,0,0,.25)",
                   }}
                   formatter={(value: number, name) =>
-                    name === "amount"
-                      ? [fmt(Number(value)), "Total Deposit"]
-                      : [`${value}`, "Transaksi"]
+                    name === "amount" ? [fmt(Number(value)), "Total Deposit"] : [`${value}`, "Transaksi"]
                   }
                   labelStyle={{ color: "var(--color-muted-foreground)", marginBottom: 4 }}
                 />
@@ -488,7 +580,6 @@ function DashboardPage() {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-
         </div>
 
         <div className="glass-panel soft-shadow rounded-xl p-5">
@@ -498,14 +589,22 @@ function DashboardPage() {
           </div>
           {bankStatus.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border/70 p-6 text-center text-xs text-muted-foreground">
-              Belum ada rekening. <Link to="/settings/bank" className="text-primary underline">Tambah di Manage Bank</Link>
+              Belum ada rekening.{" "}
+              <Link to="/settings/bank" className="text-primary underline">
+                Tambah di Manage Bank
+              </Link>
             </div>
           ) : (
             <ul className="space-y-2.5">
               {bankStatus.map((b) => (
-                <li key={b.id} className="flex items-center justify-between rounded-lg border border-border/70 bg-secondary/50 px-3 py-2.5">
+                <li
+                  key={b.id}
+                  className="flex items-center justify-between rounded-lg border border-border/70 bg-secondary/50 px-3 py-2.5"
+                >
                   <div>
-                    <p className="text-sm font-medium">{b.channel_name} · {b.account_name}</p>
+                    <p className="text-sm font-medium">
+                      {b.channel_name} · {b.account_name}
+                    </p>
                     <p className="text-xs text-muted-foreground">{fmt(Number(b.balance ?? 0))}</p>
                   </div>
                   {statusBadge(b.online ? "Online" : "Maintenance")}
@@ -532,17 +631,34 @@ function DashboardPage() {
               <ResponsiveContainer>
                 <BarChart data={channelStats}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" opacity={0.4} />
-                  <XAxis dataKey="channel" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false}
-                    tickFormatter={(v) => `${(Number(v) / 1_000_000).toFixed(1)}jt`} />
+                  <XAxis
+                    dataKey="channel"
+                    stroke="var(--color-muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="var(--color-muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v) => `${(Number(v) / 1_000_000).toFixed(1)}jt`}
+                  />
                   <Tooltip
-                    contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{
+                      background: "var(--color-popover)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
                     formatter={(v: number) => fmt(v)}
                   />
                   <Bar dataKey="amount" radius={[6, 6, 0, 0]}>
-                    {channelStats.map((c) => (<Cell key={c.channel} fill={c.fill} />))}
+                    {channelStats.map((c) => (
+                      <Cell key={c.channel} fill={c.fill} />
+                    ))}
                   </Bar>
-
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -561,7 +677,10 @@ function DashboardPage() {
           ) : (
             <ul className="space-y-2.5">
               {topMembers.map((m, i) => (
-                <li key={m.username} className="flex items-center gap-3 rounded-lg border border-border/70 bg-secondary/50 px-3 py-2.5">
+                <li
+                  key={m.username}
+                  className="flex items-center gap-3 rounded-lg border border-border/70 bg-secondary/50 px-3 py-2.5"
+                >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
                     {i + 1}
                   </div>
@@ -592,13 +711,39 @@ function DashboardPage() {
             ) : (
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={channelStats} dataKey="amount" nameKey="channel" cx="50%" cy="50%" innerRadius={50} outerRadius={90} paddingAngle={2}>
+                  <Pie
+                    data={channelStats}
+                    dataKey="amount"
+                    nameKey="channel"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
                     {channelStats.map((_, i) => {
-                      const palette = ["#38bdf8", "#f59e0b", "#10b981", "#a78bfa", "#f43f5e", "#818cf8", "#22d3ee", "#fb7185"];
+                      const palette = [
+                        "#38bdf8",
+                        "#f59e0b",
+                        "#10b981",
+                        "#a78bfa",
+                        "#f43f5e",
+                        "#818cf8",
+                        "#22d3ee",
+                        "#fb7185",
+                      ];
                       return <Cell key={i} fill={palette[i % palette.length]} />;
                     })}
                   </Pie>
-                  <Tooltip contentStyle={{ background: "var(--color-popover)", border: "1px solid var(--color-border)", borderRadius: 8, fontSize: 12 }} formatter={(v: number) => fmt(v)} />
+                  <Tooltip
+                    contentStyle={{
+                      background: "var(--color-popover)",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(v: number) => fmt(v)}
+                  />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                 </PieChart>
               </ResponsiveContainer>
@@ -616,24 +761,33 @@ function DashboardPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-gradient-to-br from-sky-500/15 to-sky-500/0 p-4 ring-1 ring-sky-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">Total Klaim</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+                Total Klaim
+              </div>
               <div className="mt-1 text-xl font-semibold text-foreground">{bonusTotals.count}</div>
             </div>
             <div className="rounded-xl bg-gradient-to-br from-emerald-500/15 to-emerald-500/0 p-4 ring-1 ring-emerald-500/25">
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Total Inject Bonus</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                Total Inject Bonus
+              </div>
               <div className="mt-1 text-xl font-semibold text-foreground">{fmt(bonusTotals.total)}</div>
             </div>
           </div>
           <ul className="mt-4 space-y-2">
             {bonusTotals.perProgram.map((p) => (
-              <li key={p.name} className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5">
+              <li
+                key={p.name}
+                className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2.5"
+              >
                 <div className="flex items-center gap-2">
                   <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-300">
                     <Gift className="h-4 w-4" />
                   </span>
                   <div>
                     <p className="text-sm font-medium">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.member} member · {p.count} klaim</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {p.member} member · {p.count} klaim
+                    </p>
                   </div>
                 </div>
                 <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">{fmt(p.bonus)}</div>
@@ -642,7 +796,6 @@ function DashboardPage() {
           </ul>
         </div>
       </div>
-
 
       {/* Recent Activity (replaces Latest Transactions) */}
       <div className="mt-6 glass-panel soft-shadow rounded-xl p-5">
@@ -673,19 +826,25 @@ function DashboardPage() {
                   Belum ada aktivitas tercatat
                 </TableCell>
               </TableRow>
-            ) : activity.map((a) => (
-              <TableRow key={a.id} className="border-border/60">
-                <TableCell className="text-xs text-muted-foreground">
-                  {new Date(a.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
-                </TableCell>
-                <TableCell className="font-medium">{a.actor_name ?? "system"}</TableCell>
-                <TableCell><Badge variant="secondary" className="text-[10px]">{a.action}</Badge></TableCell>
-                <TableCell className="text-xs">{a.entity ?? "—"}</TableCell>
-                <TableCell className="text-right text-[11px] text-muted-foreground truncate max-w-[280px]">
-                  {a.meta ? JSON.stringify(a.meta).slice(0, 80) : "—"}
-                </TableCell>
-              </TableRow>
-            ))}
+            ) : (
+              activity.map((a) => (
+                <TableRow key={a.id} className="border-border/60">
+                  <TableCell className="text-xs text-muted-foreground">
+                    {new Date(a.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
+                  </TableCell>
+                  <TableCell className="font-medium">{a.actor_name ?? "system"}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {a.action}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs">{a.entity ?? "—"}</TableCell>
+                  <TableCell className="text-right text-[11px] text-muted-foreground truncate max-w-[280px]">
+                    {a.meta ? JSON.stringify(a.meta).slice(0, 80) : "—"}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
