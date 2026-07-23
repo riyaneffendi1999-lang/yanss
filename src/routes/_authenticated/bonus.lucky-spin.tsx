@@ -83,7 +83,18 @@ function LuckySpinPage() {
         .reverse(),
     [rows],
   );
-  const completeRows = useMemo(() => rows.filter((r) => r.status === "complete"), [rows]);
+  const completeRows = useMemo(
+    () =>
+      rows
+        .filter((r) => r.status === "complete")
+        .slice()
+        .sort((a, b) => {
+          const ta = new Date(a.processed_at ?? a.created_at).getTime();
+          const tb = new Date(b.processed_at ?? b.created_at).getTime();
+          return tb - ta;
+        }),
+    [rows],
+  );
 
   const insertMut = useMutation({
     mutationFn: async (payload: { username?: string; ticket: string; bonus?: number }[]) => {
