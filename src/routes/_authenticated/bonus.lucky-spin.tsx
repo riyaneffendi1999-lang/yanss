@@ -477,7 +477,7 @@ function StatusPill({ status }: { status: "pending" | "complete" | "idle" }) {
   const map = {
     pending: { label: "Pending", cls: "bg-amber-500/15 text-amber-300 ring-amber-500/30" },
     complete: { label: "Complete", cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" },
-    idle: { label: "Belum dipakai", cls: "bg-white/5 text-muted-foreground ring-border/60" },
+    idle: { label: "Belum dipakai", cls: "bg-white/5 text-muted-foreground ring-border/30" },
   } as const;
   const s = map[status];
   return (
