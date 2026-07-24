@@ -29,17 +29,16 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
 
-    if (
-      (supabaseKey.startsWith("sb_publishable_") || supabaseKey.startsWith("sb_secret_")) &&
-      headers.get("Authorization") === `Bearer ${supabaseKey}`
-    ) {
-      headers.delete("Authorization");
-    }
-
+    // Auth Admin API (/auth/v1/admin/*) requires Authorization: Bearer <service_key>.
+    // Ensure both apikey and Authorization are always present for the admin client.
     headers.set("apikey", supabaseKey);
+    if (!headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${supabaseKey}`);
+    }
     return fetch(input, { ...init, headers });
   };
 }
+
 
 async function getAdminClient() {
   const { createClient } = await import("@supabase/supabase-js");
