@@ -35,7 +35,6 @@ const INPUT_PAGE_SIZE = 20;
 const COMPLETE_PAGE_SIZE = 10;
 const QK = ["lucky-spin-entries"] as const;
 
-
 function parseTickets(raw: string): string[] {
   return raw
     .split(/[\s,;\n\r\t]+/)
@@ -155,7 +154,6 @@ function LuckySpinPage() {
     }
     if (Object.keys(patch).length > 0) updateMut.mutate({ id: row.id, patch });
   };
-
 
   const handleAddFromPaste = () => {
     const tickets = parseTickets(pasteValue);
@@ -479,7 +477,7 @@ function StatusPill({ status }: { status: "pending" | "complete" | "idle" }) {
   const map = {
     pending: { label: "Pending", cls: "bg-amber-500/15 text-amber-300 ring-amber-500/30" },
     complete: { label: "Complete", cls: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30" },
-    idle: { label: "Belum Digunakan", cls: "bg-white/5 text-muted-foreground ring-border/60" },
+    idle: { label: "Belum dipakai", cls: "bg-white/5 text-muted-foreground ring-border/60" },
   } as const;
   const s = map[status];
   return (
