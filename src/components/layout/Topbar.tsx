@@ -14,7 +14,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+function useTopbarAvatar() {
+  return useQuery({
+    queryKey: ["topbar-avatar"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth?.user) return null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      if (!profile?.avatar_url) return null;
+      const { data: signed } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(profile.avatar_url, 3600);
+      return signed?.signedUrl ?? null;
+    },
+  });
+}
 
 export function Topbar() {
   const navigate = useNavigate();
@@ -43,8 +64,23 @@ export function Topbar() {
     }
   }
 
+  const { data: avatarUrl } = useTopbarAvatar();
+
   return (
-    <div className="flex flex-1 items-center gap-3">
+    <div className="relative flex flex-1 items-center gap-3">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            className="h-10 w-10 rounded-full border border-border object-cover shadow-sm"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted">
+            <UserCircle className="h-6 w-6 text-muted-foreground" />
+          </div>
+        )}
+      </div>
       <div className="ml-auto flex items-center gap-1.5">
         <ThemeToggle />
         <Button
