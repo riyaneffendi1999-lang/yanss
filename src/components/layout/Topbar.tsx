@@ -14,7 +14,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
+function useTopbarAvatar() {
+  return useQuery({
+    queryKey: ["topbar-avatar"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth?.user) return null;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", auth.user.id)
+        .maybeSingle();
+      if (!profile?.avatar_url) return null;
+      const { data: signed } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(profile.avatar_url, 3600);
+      return signed?.signedUrl ?? null;
+    },
+  });
+}
 
 export function Topbar() {
   const navigate = useNavigate();
