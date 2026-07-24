@@ -5,6 +5,10 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const ROLES = ["head", "supervisor", "ast_spv", "staff"] as const;
 type Role = (typeof ROLES)[number];
 
+function isOpaqueSupabaseKey(value: string) {
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+}
+
 function readSupabaseConfig() {
   const url = process.env.SUPABASE_URL || import.meta.env.VITE_SUPABASE_URL;
   const publishableKey =
@@ -29,12 +33,17 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
 
-    // Auth Admin API (/auth/v1/admin/*) requires Authorization: Bearer <service_key>.
-    // Ensure both apikey and Authorization are always present for the admin client.
     headers.set("apikey", supabaseKey);
-    if (!headers.has("Authorization")) {
+
+    // New Lovable Cloud backend keys are opaque strings, not JWTs.
+    // Sending them as `Authorization: Bearer sb_secret_...` makes the auth API
+    // answer "invalid token" on custom-domain deployments. Use `apikey` only.
+    if (isOpaqueSupabaseKey(supabaseKey)) {
+      headers.delete("Authorization");
+    } else if (!headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${supabaseKey}`);
     }
+
     return fetch(input, { ...init, headers });
   };
 }
@@ -50,7 +59,7 @@ async function getAdminClient() {
 
   if (!serviceKey) {
     throw new Error(
-      "Konfigurasi admin belum lengkap. Di Vercel tambahkan SUPABASE_SERVICE_ROLE_KEY atau SUPABASE_SECRET_KEY, lalu deploy ulang.",
+      "Konfigurasi admin belum lengkap. Pastikan secret admin backend sudah tersedia lalu publish ulang.",
     );
   }
 
@@ -119,7 +128,8 @@ export const seedHeadAccount = createServerFn({ method: "POST" }).handler(async 
         user_metadata: { full_name: "Riyan" },
       });
     if (createErr) throw new Error(createErr.message);
-    user = created.user!;
+    if (!created.user) throw new Error("Gagal membuat akun head");
+    user = created.user;
   } else {
     await supabaseAdmin.auth.admin.updateUserById(user.id, { password });
   }
@@ -222,7 +232,8 @@ export const createAdmin = createServerFn({ method: "POST" })
       user_metadata: { full_name: data.full_name },
     });
     if (cErr) throw new Error(cErr.message);
-    const uid = created.user!.id;
+    if (!created.user) throw new Error("Gagal membuat admin");
+    const uid = created.user.id;
 
     await supabaseAdmin
       .from("profiles")
