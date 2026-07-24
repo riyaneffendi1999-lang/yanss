@@ -64,8 +64,23 @@ export function Topbar() {
     }
   }
 
+  const { data: avatarUrl } = useTopbarAvatar();
+
   return (
-    <div className="flex flex-1 items-center gap-3">
+    <div className="relative flex flex-1 items-center gap-3">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt="Profile"
+            className="h-10 w-10 rounded-full border border-border object-cover shadow-sm"
+          />
+        ) : (
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-muted">
+            <UserCircle className="h-6 w-6 text-muted-foreground" />
+          </div>
+        )}
+      </div>
       <div className="ml-auto flex items-center gap-1.5">
         <ThemeToggle />
         <Button
